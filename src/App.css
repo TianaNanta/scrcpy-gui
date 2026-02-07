@@ -430,7 +430,7 @@ select.select option {
     background: var(--surface);
     border-radius: var(--border-radius);
     padding: 1rem;
-    font-family: "Share Tech", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: "Ubuntu Mono", "Share Tech", "Monaco", "Menlo", monospace;
     font-size: calc(var(--font-size) * 0.875);
     line-height: 1.5;
 }
@@ -569,6 +569,36 @@ select.select option {
 .dependency-desc {
     font-size: calc(var(--font-size) * 0.875);
     color: var(--text-secondary);
+}
+
+/* Wireless Connection */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.status-indicator {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.status-indicator.connected {
+    color: var(--success-color, #10b981);
+}
+
+.status-indicator.disconnected {
+    color: var(--text-secondary);
+}
+
+.status-text {
+    font-size: calc(var(--font-size) * 0.875);
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
 /* Settings */

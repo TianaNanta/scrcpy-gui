@@ -13,6 +13,7 @@ import {
   MusicalNoteIcon,
   CheckCircleIcon,
   XCircleIcon,
+  WifiIcon,
 } from "@heroicons/react/24/outline";
 import "./App.css";
 
@@ -103,6 +104,13 @@ function App() {
   const [audioForwarding, setAudioForwarding] = useState(false);
   const [audioBitrate, setAudioBitrate] = useState<number>(128);
   const [microphoneForwarding, setMicrophoneForwarding] = useState(false);
+
+  // Wireless connection state
+  const [wirelessMode, setWirelessMode] = useState(false);
+  const [deviceIp, setDeviceIp] = useState("");
+  const [devicePort, setDevicePort] = useState(5555);
+  const [wirelessConnecting, setWirelessConnecting] = useState(false);
+  const [wirelessConnected, setWirelessConnected] = useState(false);
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -262,6 +270,35 @@ function App() {
 
   const addLog = (message: string) => {
     setLogs((prev) => [...prev, `${new Date().toISOString()}: ${message}`]);
+  };
+
+  const setupWirelessConnection = async () => {
+    if (!deviceIp.trim()) {
+      addLog("Error: IP address is required for wireless connection");
+      return;
+    }
+
+    setWirelessConnecting(true);
+    addLog(`Attempting wireless connection to ${deviceIp}:${devicePort}`);
+
+    try {
+      await invoke("connect_wireless_device", {
+        ip: deviceIp.trim(),
+        port: devicePort,
+      });
+
+      setWirelessConnected(true);
+      addLog(
+        `Successfully connected to wireless device at ${deviceIp}:${devicePort}`,
+      );
+      // Refresh device list to show the wireless device
+      listDevices();
+    } catch (error) {
+      addLog(`Failed to connect to wireless device: ${error}`);
+      setWirelessConnected(false);
+    } finally {
+      setWirelessConnecting(false);
+    }
   };
 
   async function checkDependencies() {
@@ -468,6 +505,72 @@ function App() {
                   Microphone Forwarding
                 </label>
               </div>
+            </section>
+
+            <section className="section">
+              <h2>
+                <WifiIcon className="section-icon" />
+                Wireless Connection
+              </h2>
+              <div className="row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={wirelessMode}
+                    onChange={(e) => setWirelessMode(e.target.checked)}
+                  />
+                  Enable Wireless Mode
+                </label>
+              </div>
+              {wirelessMode && (
+                <>
+                  <div className="row">
+                    <label className="input-label">
+                      Device IP Address:
+                      <input
+                        type="text"
+                        placeholder="192.168.1.100"
+                        value={deviceIp}
+                        onChange={(e) => setDeviceIp(e.target.value)}
+                        className="input"
+                      />
+                    </label>
+                    <label className="input-label">
+                      Port:
+                      <input
+                        type="number"
+                        min="1024"
+                        max="65535"
+                        value={devicePort}
+                        onChange={(e) => setDevicePort(Number(e.target.value))}
+                        className="input"
+                        style={{ width: "120px" }}
+                      />
+                    </label>
+                  </div>
+                  <div className="row">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={setupWirelessConnection}
+                      disabled={wirelessConnecting}
+                    >
+                      {wirelessConnecting
+                        ? "Connecting..."
+                        : "Connect Wireless"}
+                    </button>
+                    <div className="connection-status">
+                      <span
+                        className={`status-indicator ${wirelessConnected ? "connected" : "disconnected"}`}
+                      >
+                        {wirelessConnected ? "●" : "○"}
+                      </span>
+                      <span className="status-text">
+                        {wirelessConnected ? "Connected" : "Disconnected"}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </section>
 
             <section className="section">
