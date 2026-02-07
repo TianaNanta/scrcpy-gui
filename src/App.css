@@ -657,7 +657,7 @@ select.select option {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
-    margin-top: 1rem;
+    /*margin-top: 1rem;*/
 }
 
 .device-card {
@@ -811,6 +811,42 @@ header.devices-header {
 
 .device-filter-btn.active:hover {
     background: var(--primary-hover);
+}
+
+/* Device Actions */
+.device-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-stop {
+    background: var(--error-color);
+    color: white;
+    border-color: var(--error-color);
+}
+
+.btn-stop:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.btn-icon-only {
+    padding: 0.5rem;
+    min-width: auto;
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.btn-delete {
+    background: var(--error-color);
+    color: white;
+    border-color: var(--error-color);
+}
+
+.btn-delete:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
 }
 
 /* Settings */

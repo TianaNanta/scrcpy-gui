@@ -15,6 +15,7 @@ import {
   XCircleIcon,
   WifiIcon,
   ComputerDesktopIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import "./App.css";
 
@@ -157,6 +158,9 @@ function App() {
   const [deviceFilter, setDeviceFilter] = useState<"all" | "usb" | "wireless">(
     "all",
   );
+
+  // Active mirroring devices
+  const [activeDevices, setActiveDevices] = useState<string[]>([]);
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -482,6 +486,7 @@ function App() {
         windowBorderless,
         fullscreen,
       });
+      setActiveDevices((prev) => [...prev, deviceSerial]);
       addLog(
         `Scrcpy started successfully${recordingEnabled ? " (recording enabled)" : ""}`,
         "SUCCESS",
@@ -497,6 +502,7 @@ function App() {
   async function stopScrcpy(serial: string) {
     try {
       await invoke("stop_scrcpy", { serial });
+      setActiveDevices((prev) => prev.filter((s) => s !== serial));
       addLog(`Scrcpy stopped for device: ${serial}`, "SUCCESS");
     } catch (e) {
       console.error("Failed to stop scrcpy:", e);
@@ -604,69 +610,76 @@ function App() {
                       (deviceFilter === "wireless" && d.is_wireless);
                     return matchesSearch && matchesFilter;
                   })
-                  .map((d) => (
-                    <div
-                      key={d.serial}
-                      className={`device-card ${d.status === "device" ? "online" : "offline"}`}
-                    >
-                      <div className="device-header">
-                        <div className="device-serial">{d.serial}</div>
-                        <div className="device-status">
-                          <span
-                            className={`status-dot ${d.status === "device" ? "online" : "offline"}`}
-                          ></span>
-                          {d.status}
-                          {d.is_wireless && (
-                            <WifiIcon className="wireless-icon" />
+                  .map((d) => {
+                    return (
+                      <div
+                        key={d.serial}
+                        className={`device-card ${d.status === "device" ? "online" : "offline"}`}
+                      >
+                        <div className="device-header">
+                          <div className="device-serial">{d.serial}</div>
+                          <div className="device-status">
+                            <span
+                              className={`status-dot ${d.status === "device" ? "online" : "offline"}`}
+                            ></span>
+                            {d.status}
+                            {d.is_wireless && (
+                              <WifiIcon className="wireless-icon" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="device-info">
+                          {d.model && <div>Model: {d.model}</div>}
+                          {d.android_version && (
+                            <div>Android: {d.android_version}</div>
+                          )}
+                          {d.battery_level !== undefined && (
+                            <div>Battery: {d.battery_level}%</div>
                           )}
                         </div>
+                        <div className="device-actions">
+                          {d.is_wireless && (
+                            <button
+                              className="btn btn-icon-only btn-delete"
+                              onClick={() => disconnectWireless(d.serial)}
+                              disabled={wirelessConnecting}
+                              title="Delete wireless connection"
+                            >
+                              <TrashIcon className="btn-icon" />
+                            </button>
+                          )}
+                          <div className="device-action-main">
+                            {activeDevices.includes(d.serial) ? (
+                              <button
+                                className="btn btn-stop"
+                                onClick={() => stopScrcpy(d.serial)}
+                                disabled={
+                                  !dependencies?.adb ||
+                                  !dependencies?.scrcpy ||
+                                  d.status !== "device"
+                                }
+                              >
+                                Stop
+                              </button>
+                            ) : (
+                              <button
+                                className="btn btn-primary"
+                                onClick={() => startScrcpy(d.serial)}
+                                disabled={
+                                  loading ||
+                                  !dependencies?.adb ||
+                                  !dependencies?.scrcpy ||
+                                  d.status !== "device"
+                                }
+                              >
+                                Mirror
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="device-info">
-                        {d.model && <div>Model: {d.model}</div>}
-                        {d.android_version && (
-                          <div>Android: {d.android_version}</div>
-                        )}
-                        {d.battery_level !== undefined && (
-                          <div>Battery: {d.battery_level}%</div>
-                        )}
-                      </div>
-                      <div className="device-actions">
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => startScrcpy(d.serial)}
-                          disabled={
-                            loading ||
-                            !dependencies?.adb ||
-                            !dependencies?.scrcpy ||
-                            d.status !== "device"
-                          }
-                        >
-                          <PlayIcon className="btn-icon" />
-                          Start Scrcpy
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => stopScrcpy(d.serial)}
-                          disabled={
-                            !dependencies?.adb ||
-                            !dependencies?.scrcpy ||
-                            d.status !== "device"
-                          }
-                        >
-                          Stop Scrcpy
-                        </button>
-                        {d.is_wireless && (
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => disconnectWireless(d.serial)}
-                            disabled={wirelessConnecting}
-                          >
-                            Disconnect
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             </section>
 
