@@ -726,7 +726,10 @@ function App() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <DevicePhoneMobileIcon className="sidebar-logo" />
-          <h2>Scrcpy GUI</h2>
+          <div className="sidebar-title">
+            <h2>Scrcpy GUI</h2>
+            <span className="sidebar-version">v0.2.3</span>
+          </div>
         </div>
         <nav className="sidebar-nav">
           {tabs.map((tab) => {
