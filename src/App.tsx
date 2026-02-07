@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   DevicePhoneMobileIcon,
+  PlusIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
   Bars3Icon,
@@ -153,11 +154,9 @@ function App() {
   const [microphoneForwarding, setMicrophoneForwarding] = useState(false);
 
   // Wireless connection state
-  const [wirelessMode, setWirelessMode] = useState(false);
   const [deviceIp, setDeviceIp] = useState("");
   const [devicePort, setDevicePort] = useState(5555);
   const [wirelessConnecting, setWirelessConnecting] = useState(false);
-  const [wirelessConnected, setWirelessConnected] = useState(false);
 
   // Display configuration state
   const [displayId, setDisplayId] = useState<number>(0);
@@ -194,6 +193,11 @@ function App() {
 
   // Active mirroring devices
   const [activeDevices, setActiveDevices] = useState<string[]>([]);
+
+  // Pair new device modal states
+  const [showPairModal, setShowPairModal] = useState(false);
+  const [pairMode, setPairMode] = useState<"usb" | "wireless" | null>(null);
+  const [selectedUsbDevice, setSelectedUsbDevice] = useState("");
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -507,7 +511,6 @@ function App() {
         port: devicePort,
       });
 
-      setWirelessConnected(true);
       addLog(
         `Successfully connected to wireless device at ${deviceIp}:${devicePort}`,
         "SUCCESS",
@@ -516,7 +519,6 @@ function App() {
       listDevices();
     } catch (error) {
       addLog(`Failed to connect to wireless device: ${error}`, "ERROR");
-      setWirelessConnected(false);
     } finally {
       setWirelessConnecting(false);
     }
@@ -861,74 +863,157 @@ function App() {
                       </div>
                     );
                   })}
+                <div
+                  className="device-card pair-new-device"
+                  style={{ border: "2px dashed var(--border-color)" }}
+                  onClick={() => {
+                    setShowPairModal(true);
+                    setPairMode(null);
+                  }}
+                >
+                  <div className="device-header">
+                    <div
+                      className="device-serial"
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
+                      <PlusIcon
+                        style={{
+                          width: "1.5rem",
+                          height: "1.5rem",
+                          marginRight: "0.5rem",
+                        }}
+                      />
+                      Pair New Device
+                    </div>
+                  </div>
+                  <div className="device-info">
+                    <div>Connect via USB or Wi-Fi</div>
+                  </div>
+                </div>
               </div>
             </section>
 
-            <section className="section">
-              <h2>
-                <WifiIcon className="section-icon" />
-                Wireless Connection
-              </h2>
-              <div className="row">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={wirelessMode}
-                    onChange={(e) => setWirelessMode(e.target.checked)}
-                  />
-                  Enable Wireless Mode
-                </label>
-              </div>
-              {wirelessMode && (
-                <>
-                  <div className="row">
-                    <label className="input-label">
-                      Device IP Address:
-                      <input
-                        type="text"
-                        placeholder="192.168.1.100"
-                        value={deviceIp}
-                        onChange={(e) => setDeviceIp(e.target.value)}
-                        className="input"
-                      />
-                    </label>
-                    <label className="input-label">
-                      Port:
-                      <input
-                        type="number"
-                        min="1024"
-                        max="65535"
-                        value={devicePort}
-                        onChange={(e) => setDevicePort(Number(e.target.value))}
-                        className="input"
-                        style={{ width: "120px" }}
-                      />
-                    </label>
+            {showPairModal && (
+              <div
+                className="modal-overlay"
+                onClick={() => setShowPairModal(false)}
+              >
+                <div
+                  className="modal-content"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="modal-header">
+                    <h3>Pair New Device</h3>
+                    <button
+                      className="modal-close"
+                      onClick={() => setShowPairModal(false)}
+                    >
+                      ×
+                    </button>
                   </div>
-                  <div className="row">
+                  <div className="modal-body">
+                    {!pairMode ? (
+                      <div className="pair-options">
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => setPairMode("usb")}
+                        >
+                          Connect via USB
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => setPairMode("wireless")}
+                        >
+                          Connect via Wireless
+                        </button>
+                      </div>
+                    ) : pairMode === "usb" ? (
+                      <div className="pair-usb">
+                        <p>
+                          USB devices are automatically detected. Select a
+                          device to mirror:
+                        </p>
+                        <select
+                          value={selectedUsbDevice}
+                          onChange={(e) => setSelectedUsbDevice(e.target.value)}
+                          className="select"
+                        >
+                          <option value="">Select USB device</option>
+                          {devices
+                            .filter(
+                              (d) => d.status === "device" && !d.is_wireless,
+                            )
+                            .map((d) => (
+                              <option key={d.serial} value={d.serial}>
+                                {d.serial} {d.model ? `(${d.model})` : ""}
+                              </option>
+                            ))}
+                        </select>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => {
+                            if (selectedUsbDevice)
+                              startScrcpy(selectedUsbDevice);
+                            setShowPairModal(false);
+                            setPairMode(null);
+                          }}
+                        >
+                          Start Mirroring
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="pair-wireless">
+                        <label className="input-label">
+                          Device IP Address:
+                          <input
+                            type="text"
+                            placeholder="192.168.1.100"
+                            value={deviceIp}
+                            onChange={(e) => setDeviceIp(e.target.value)}
+                            className="input"
+                          />
+                        </label>
+                        <label className="input-label">
+                          Port:
+                          <input
+                            type="number"
+                            min="1024"
+                            max="65535"
+                            value={devicePort}
+                            onChange={(e) =>
+                              setDevicePort(Number(e.target.value))
+                            }
+                            className="input"
+                            style={{ width: "120px" }}
+                          />
+                        </label>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => {
+                            setupWirelessConnection();
+                            setShowPairModal(false);
+                            setPairMode(null);
+                          }}
+                        >
+                          Connect
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="modal-footer">
                     <button
                       className="btn btn-secondary"
-                      onClick={setupWirelessConnection}
-                      disabled={wirelessConnecting}
+                      onClick={() => {
+                        setPairMode(null);
+                        setShowPairModal(false);
+                      }}
                     >
-                      {wirelessConnecting
-                        ? "Connecting..."
-                        : "Connect Wireless"}
+                      Cancel
                     </button>
-                    <div className="connection-status">
-                      <span
-                        className={`status-indicator ${wirelessConnected ? "connected" : "disconnected"}`}
-                      >
-                        {wirelessConnected ? "●" : "○"}
-                      </span>
-                      <span className="status-text">
-                        {wirelessConnected ? "Connected" : "Disconnected"}
-                      </span>
-                    </div>
                   </div>
-                </>
-              )}
-            </section>
+                </div>
+              </div>
+            )}
 
             {showDeviceModal && selectedDeviceForSettings && (
               <div
