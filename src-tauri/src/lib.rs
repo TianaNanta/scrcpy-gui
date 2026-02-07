@@ -1,5 +1,12 @@
+use std::collections::HashMap;
 use std::process::Stdio;
-use tokio::process::Command;
+use std::sync::Arc;
+use tokio::process::{Child, Command};
+use tokio::sync::Mutex;
+
+lazy_static::lazy_static! {
+    static ref SCRCPY_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
+}
 
 #[derive(serde::Serialize)]
 struct Dependencies {
@@ -158,6 +165,18 @@ async fn start_scrcpy(
     audio_forwarding: bool,
     audio_bitrate: Option<u32>,
     microphone_forwarding: bool,
+    display_id: Option<u32>,
+    rotation: Option<u32>,
+    crop: Option<String>,
+    lock_video_orientation: bool,
+    display_buffer: Option<u32>,
+    window_x: Option<u32>,
+    window_y: Option<u32>,
+    window_width: Option<u32>,
+    window_height: Option<u32>,
+    always_on_top: bool,
+    window_borderless: bool,
+    fullscreen: bool,
 ) -> Result<(), String> {
     let mut cmd = Command::new("scrcpy");
     cmd.arg("-s").arg(&serial);
@@ -206,13 +225,65 @@ async fn start_scrcpy(
         cmd.arg("--microphone");
     }
 
-    cmd.stdout(Stdio::null()).stderr(Stdio::null());
+    if let Some(display_id) = display_id {
+        cmd.arg("--display-id").arg(display_id.to_string());
+    }
 
-    cmd.spawn()
+    if let Some(rotation) = rotation {
+        cmd.arg("--orientation").arg(rotation.to_string());
+    }
+
+    if let Some(crop) = crop {
+        cmd.arg("--crop").arg(crop);
+    }
+
+    if lock_video_orientation {
+        cmd.arg("--lock-video-orientation");
+    }
+
+    if let Some(display_buffer) = display_buffer {
+        cmd.arg("--display-buffer").arg(display_buffer.to_string());
+    }
+
+    if let Some(window_x) = window_x {
+        cmd.arg("--window-x").arg(window_x.to_string());
+    }
+
+    if let Some(window_y) = window_y {
+        cmd.arg("--window-y").arg(window_y.to_string());
+    }
+
+    if let Some(window_width) = window_width {
+        cmd.arg("--window-width").arg(window_width.to_string());
+    }
+
+    if let Some(window_height) = window_height {
+        cmd.arg("--window-height").arg(window_height.to_string());
+    }
+
+    if always_on_top {
+        cmd.arg("--always-on-top");
+    }
+
+    if window_borderless {
+        cmd.arg("--window-borderless");
+    }
+
+    if fullscreen {
+        cmd.arg("--fullscreen");
+    }
+
+    cmd.stderr(Stdio::inherit());
+
+    let child = cmd
+        .spawn()
         .map_err(|e| format!("Failed to start scrcpy: {}", e))?;
 
-    // For now, we don't store the child, so we can't stop it later.
-    // In a real app, you'd need to manage processes.
+    // Store the child process
+    {
+        let mut processes = SCRCPY_PROCESSES.lock().await;
+        processes.insert(serial, child);
+    }
 
     Ok(())
 }
@@ -280,6 +351,38 @@ async fn get_device_health(serial: String) -> Result<DeviceHealth, String> {
     Ok(DeviceHealth { battery_level })
 }
 
+#[tauri::command]
+async fn test_device(serial: String) -> Result<(), String> {
+    let output = Command::new("adb")
+        .args(["-s", &serial, "shell", "echo", "test"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run adb test: {}", e))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Device test failed: {}", stderr))
+    }
+}
+
+#[tauri::command]
+async fn stop_scrcpy(serial: String) -> Result<(), String> {
+    let mut processes = SCRCPY_PROCESSES.lock().await;
+    if let Some(mut child) = processes.remove(&serial) {
+        child
+            .kill()
+            .await
+            .map_err(|e| format!("Failed to kill scrcpy process: {}", e))?;
+        Ok(())
+    } else {
+        Err("No scrcpy process found for this device".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -289,10 +392,12 @@ pub fn run() {
             check_dependencies,
             list_devices,
             start_scrcpy,
+            stop_scrcpy,
             select_save_file,
             connect_wireless_device,
             disconnect_wireless_device,
-            get_device_health
+            get_device_health,
+            test_device
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

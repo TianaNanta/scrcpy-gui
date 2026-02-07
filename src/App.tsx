@@ -40,6 +40,18 @@ interface Preset {
   turnScreenOff: boolean;
   stayAwake: boolean;
   showTouches: boolean;
+  displayId: number;
+  rotation: 0 | 90 | 180 | 270;
+  crop: string;
+  lockVideoOrientation: boolean;
+  displayBuffer: number;
+  windowX: number;
+  windowY: number;
+  windowWidth: number;
+  windowHeight: number;
+  alwaysOnTop: boolean;
+  windowBorderless: boolean;
+  fullscreen: boolean;
 }
 
 interface ColorScheme {
@@ -122,6 +134,22 @@ function App() {
   const [devicePort, setDevicePort] = useState(5555);
   const [wirelessConnecting, setWirelessConnecting] = useState(false);
   const [wirelessConnected, setWirelessConnected] = useState(false);
+
+  // Display configuration state
+  const [displayId, setDisplayId] = useState<number>(0);
+  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
+  const [crop, setCrop] = useState<string>("");
+  const [lockVideoOrientation, setLockVideoOrientation] = useState(false);
+  const [displayBuffer, setDisplayBuffer] = useState<number>(0);
+
+  // Window configuration state
+  const [windowX, setWindowX] = useState<number>(0);
+  const [windowY, setWindowY] = useState<number>(0);
+  const [windowWidth, setWindowWidth] = useState<number>(0);
+  const [windowHeight, setWindowHeight] = useState<number>(0);
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
+  const [windowBorderless, setWindowBorderless] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -264,6 +292,18 @@ function App() {
       turnScreenOff,
       stayAwake,
       showTouches,
+      displayId,
+      rotation,
+      crop,
+      lockVideoOrientation,
+      displayBuffer,
+      windowX,
+      windowY,
+      windowWidth,
+      windowHeight,
+      alwaysOnTop,
+      windowBorderless,
+      fullscreen,
     };
     const updated = [...presets, newPreset];
     setPresets(updated);
@@ -277,6 +317,18 @@ function App() {
     setTurnScreenOff(preset.turnScreenOff);
     setStayAwake(preset.stayAwake);
     setShowTouches(preset.showTouches);
+    setDisplayId(preset.displayId);
+    setRotation(preset.rotation);
+    setCrop(preset.crop);
+    setLockVideoOrientation(preset.lockVideoOrientation);
+    setDisplayBuffer(preset.displayBuffer);
+    setWindowX(preset.windowX);
+    setWindowY(preset.windowY);
+    setWindowWidth(preset.windowWidth);
+    setWindowHeight(preset.windowHeight);
+    setAlwaysOnTop(preset.alwaysOnTop);
+    setWindowBorderless(preset.windowBorderless);
+    setFullscreen(preset.fullscreen);
   };
 
   const addLog = (message: string, level: LogLevel = "INFO") => {
@@ -384,6 +436,17 @@ function App() {
     const deviceSerial = serial || selectedDevice;
     if (!deviceSerial) return;
     setLoading(true);
+    addLog(`Testing device connection: ${deviceSerial}`);
+    try {
+      await invoke("test_device", { serial: deviceSerial });
+      addLog(`Device test passed for: ${deviceSerial}`, "SUCCESS");
+    } catch (e) {
+      console.error("Device test failed:", e);
+      addLog(`Device test failed: ${e}`, "ERROR");
+      setLoading(false);
+      return;
+    }
+
     addLog(`Starting scrcpy for device: ${deviceSerial}`);
     try {
       await invoke("start_scrcpy", {
@@ -399,6 +462,18 @@ function App() {
         audioForwarding: audioForwarding,
         audioBitrate: audioForwarding ? audioBitrate : undefined,
         microphoneForwarding: microphoneForwarding,
+        displayId: displayId,
+        rotation,
+        crop: crop.trim() || undefined,
+        lockVideoOrientation,
+        displayBuffer: displayBuffer > 0 ? displayBuffer : undefined,
+        windowX: windowX > 0 ? windowX : undefined,
+        windowY: windowY > 0 ? windowY : undefined,
+        windowWidth: windowWidth > 0 ? windowWidth : undefined,
+        windowHeight: windowHeight > 0 ? windowHeight : undefined,
+        alwaysOnTop,
+        windowBorderless,
+        fullscreen,
       });
       addLog(
         `Scrcpy started successfully${recordingEnabled ? " (recording enabled)" : ""}`,
@@ -409,6 +484,16 @@ function App() {
       addLog(`Failed to start scrcpy: ${e}`, "ERROR");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function stopScrcpy(serial: string) {
+    try {
+      await invoke("stop_scrcpy", { serial });
+      addLog(`Scrcpy stopped for device: ${serial}`, "SUCCESS");
+    } catch (e) {
+      console.error("Failed to stop scrcpy:", e);
+      addLog(`Failed to stop scrcpy: ${e}`, "ERROR");
     }
   }
 
@@ -484,6 +569,17 @@ function App() {
                       >
                         <PlayIcon className="btn-icon" />
                         Start Scrcpy
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => stopScrcpy(d.serial)}
+                        disabled={
+                          !dependencies?.adb ||
+                          !dependencies?.scrcpy ||
+                          d.status !== "device"
+                        }
+                      >
+                        Stop Scrcpy
                       </button>
                       {d.is_wireless && (
                         <button
@@ -735,6 +831,16 @@ function App() {
                       className="input"
                     />
                   </label>
+                  <label className="input-label">
+                    Display ID:
+                    <input
+                      type="number"
+                      value={displayId}
+                      onChange={(e) => setDisplayId(Number(e.target.value))}
+                      min="0"
+                      className="input"
+                    />
+                  </label>
                 </div>
                 <div className="option-group">
                   <label className="checkbox-label">
@@ -768,6 +874,126 @@ function App() {
                       onChange={(e) => setShowTouches(e.target.checked)}
                     />
                     Show Touches
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={lockVideoOrientation}
+                      onChange={(e) =>
+                        setLockVideoOrientation(e.target.checked)
+                      }
+                    />
+                    Lock Video Orientation
+                  </label>
+                </div>
+                <div className="option-group">
+                  <label className="input-label">
+                    Orientation (°):
+                    <select
+                      value={rotation}
+                      onChange={(e) =>
+                        setRotation(
+                          Number(e.target.value) as 0 | 90 | 180 | 270,
+                        )
+                      }
+                      className="select"
+                      style={{
+                        backgroundColor: "var(--input-bg)",
+                        color: "var(--text-primary)",
+                        borderColor: "var(--border-color)",
+                      }}
+                    >
+                      <option value={0}>0°</option>
+                      <option value={90}>90°</option>
+                      <option value={180}>180°</option>
+                      <option value={270}>270°</option>
+                    </select>
+                  </label>
+                  <label className="input-label">
+                    Crop (width:height:x:y):
+                    <input
+                      type="text"
+                      value={crop}
+                      onChange={(e) => setCrop(e.target.value)}
+                      placeholder="e.g., 1920:1080:0:0"
+                      className="input"
+                    />
+                  </label>
+                  <label className="input-label">
+                    Display Buffer (MB):
+                    <input
+                      type="number"
+                      value={displayBuffer}
+                      onChange={(e) => setDisplayBuffer(Number(e.target.value))}
+                      min="0"
+                      className="input"
+                    />
+                  </label>
+                  <label className="input-label">
+                    Window X:
+                    <input
+                      type="number"
+                      value={windowX}
+                      onChange={(e) => setWindowX(Number(e.target.value))}
+                      min="0"
+                      className="input"
+                    />
+                  </label>
+                  <label className="input-label">
+                    Window Y:
+                    <input
+                      type="number"
+                      value={windowY}
+                      onChange={(e) => setWindowY(Number(e.target.value))}
+                      min="0"
+                      className="input"
+                    />
+                  </label>
+                  <label className="input-label">
+                    Window Width:
+                    <input
+                      type="number"
+                      value={windowWidth}
+                      onChange={(e) => setWindowWidth(Number(e.target.value))}
+                      min="0"
+                      className="input"
+                    />
+                  </label>
+                  <label className="input-label">
+                    Window Height:
+                    <input
+                      type="number"
+                      value={windowHeight}
+                      onChange={(e) => setWindowHeight(Number(e.target.value))}
+                      min="0"
+                      className="input"
+                    />
+                  </label>
+                </div>
+                <div className="option-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={alwaysOnTop}
+                      onChange={(e) => setAlwaysOnTop(e.target.checked)}
+                    />
+                    Always on Top
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={windowBorderless}
+                      onChange={(e) => setWindowBorderless(e.target.checked)}
+                    />
+                    Borderless Window
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={fullscreen}
+                      onChange={(e) => setFullscreen(e.target.checked)}
+                    />
+                    Fullscreen
                   </label>
                 </div>
               </div>
