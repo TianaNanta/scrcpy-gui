@@ -1602,7 +1602,7 @@ function App() {
           <DevicePhoneMobileIcon className="sidebar-logo" />
           <div className="sidebar-title">
             <h2>Scrcpy GUI</h2>
-            <span className="sidebar-version">v0.2.3</span>
+            <span className="sidebar-version">v0.3.0</span>
           </div>
         </div>
         <nav className="sidebar-nav">
