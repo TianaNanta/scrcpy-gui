@@ -8,9 +8,9 @@ A beautiful graphical user interface for [scrcpy](https://github.com/Genymobile/
 - Start scrcpy mirroring with customizable options
 - Modern, beautiful UI with icons and responsive design
 - Dependency checks for ADB and scrcpy
-- Customizable themes (Light, Dark, System)
-- Multiple color schemes (Blue, Green, Purple, Red, Orange)
-- Adjustable font sizes (Small, Medium, Large)
+- Customizable themes via dropdown (Light, Dark, System)
+- Multiple color schemes via dropdown (Blue, Green, Purple, Red, Orange)
+- Adjustable font sizes via number input (12-24px)
 - Configuration presets and comprehensive logging
 
 ## Prerequisites

@@ -41,7 +41,6 @@ interface ColorScheme {
 
 type Tab = "devices" | "presets" | "logs" | "settings";
 type Theme = "light" | "dark" | "system";
-type FontSize = "small" | "medium" | "large";
 
 const colorSchemes: ColorScheme[] = [
   {
@@ -89,7 +88,7 @@ function App() {
   // Settings state
   const [theme, setTheme] = useState<Theme>("system");
   const [colorScheme, setColorScheme] = useState<ColorScheme>(colorSchemes[0]);
-  const [fontSize, setFontSize] = useState<FontSize>("medium");
+  const [fontSize, setFontSize] = useState<number>(16);
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -117,8 +116,10 @@ function App() {
       (localStorage.getItem("scrcpy-theme") as Theme) || "system";
     const savedColorSchemeName =
       localStorage.getItem("scrcpy-colorScheme") || "Blue";
-    const savedFontSize =
-      (localStorage.getItem("scrcpy-fontSize") as FontSize) || "medium";
+    const savedFontSize = parseInt(
+      localStorage.getItem("scrcpy-fontSize") || "16",
+      10,
+    );
 
     const savedColorScheme =
       colorSchemes.find((s) => s.name === savedColorSchemeName) ||
@@ -134,7 +135,7 @@ function App() {
   const applySettings = (
     newTheme: Theme,
     newColorScheme: ColorScheme,
-    newFontSize: FontSize,
+    newFontSize: number,
   ) => {
     const root = document.documentElement;
 
@@ -143,25 +144,47 @@ function App() {
       newTheme === "dark" ||
       (newTheme === "system" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches);
-    root.classList.toggle("dark-theme", isDark);
 
-    // Apply color scheme (only primary colors)
+    if (isDark) {
+      // Dark theme variables
+      root.style.setProperty(
+        "--background",
+        "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+      );
+      root.style.setProperty("--surface", "rgba(30, 41, 59, 0.95)");
+      root.style.setProperty("--text-primary", "#f1f5f9");
+      root.style.setProperty("--text-secondary", "#94a3b8");
+      root.style.setProperty("--border-color", "#475569");
+      root.style.setProperty("--input-bg", "rgba(30, 41, 59, 0.95)");
+    } else {
+      // Light theme variables
+      root.style.setProperty(
+        "--background",
+        "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+      );
+      root.style.setProperty("--surface", "rgba(255, 255, 255, 0.95)");
+      root.style.setProperty("--text-primary", "#1f2937");
+      root.style.setProperty("--text-secondary", "#6b7280");
+      root.style.setProperty("--border-color", "#e5e7eb");
+      root.style.setProperty("--input-bg", "white");
+    }
+
+    // Apply color scheme (primary colors)
     root.style.setProperty("--primary-color", newColorScheme.primary);
     root.style.setProperty("--primary-hover", newColorScheme.primaryHover);
 
     // Apply font size
-    const fontSizes = { small: "14px", medium: "16px", large: "18px" };
-    root.style.setProperty("--font-size", fontSizes[newFontSize]);
+    root.style.setProperty("--font-size", `${newFontSize}px`);
   };
 
   const saveSettings = (
     newTheme: Theme,
     newColorScheme: ColorScheme,
-    newFontSize: FontSize,
+    newFontSize: number,
   ) => {
     localStorage.setItem("scrcpy-theme", newTheme);
     localStorage.setItem("scrcpy-colorScheme", newColorScheme.name);
-    localStorage.setItem("scrcpy-fontSize", newFontSize);
+    localStorage.setItem("scrcpy-fontSize", newFontSize.toString());
     applySettings(newTheme, newColorScheme, newFontSize);
   };
 
@@ -282,9 +305,15 @@ function App() {
                 </button>
                 <div className="select-wrapper">
                   <select
+                    key={`device-select-${theme}`}
                     value={selectedDevice}
                     onChange={(e) => setSelectedDevice(e.target.value)}
                     className="select"
+                    style={{
+                      backgroundColor: "var(--input-bg)",
+                      color: "var(--text-primary)",
+                      borderColor: "var(--border-color)",
+                    }}
                   >
                     <option value="">Select a device</option>
                     {devices.map((d) => (
@@ -458,118 +487,88 @@ function App() {
             <section className="section">
               <h2>Theme</h2>
               <div className="row">
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="theme"
-                    value="light"
-                    checked={theme === "light"}
+                <div className="select-wrapper">
+                  <select
+                    key={`theme-select-${theme}`}
+                    value={theme}
                     onChange={(e) => {
                       const newTheme = e.target.value as Theme;
                       setTheme(newTheme);
                       saveSettings(newTheme, colorScheme, fontSize);
                     }}
-                  />
-                  Light
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="theme"
-                    value="dark"
-                    checked={theme === "dark"}
-                    onChange={(e) => {
-                      const newTheme = e.target.value as Theme;
-                      setTheme(newTheme);
-                      saveSettings(newTheme, colorScheme, fontSize);
+                    className="select"
+                    style={{
+                      backgroundColor: "var(--input-bg)",
+                      color: "var(--text-primary)",
+                      borderColor: "var(--border-color)",
                     }}
-                  />
-                  Dark
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="theme"
-                    value="system"
-                    checked={theme === "system"}
-                    onChange={(e) => {
-                      const newTheme = e.target.value as Theme;
-                      setTheme(newTheme);
-                      saveSettings(newTheme, colorScheme, fontSize);
-                    }}
-                  />
-                  System
-                </label>
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">System</option>
+                  </select>
+                </div>
               </div>
             </section>
 
             <section className="section">
               <h2>Color Scheme</h2>
-              <div className="color-schemes">
-                {colorSchemes.map((scheme) => (
-                  <button
-                    key={scheme.name}
-                    className={`color-scheme-btn ${colorScheme.name === scheme.name ? "active" : ""}`}
-                    onClick={() => {
-                      setColorScheme(scheme);
-                      saveSettings(theme, scheme, fontSize);
+              <div className="row">
+                <div className="select-wrapper">
+                  <select
+                    key={`color-select-${theme}`}
+                    value={colorScheme.name}
+                    onChange={(e) => {
+                      const selectedScheme = colorSchemes.find(
+                        (s) => s.name === e.target.value,
+                      );
+                      if (selectedScheme) {
+                        setColorScheme(selectedScheme);
+                        saveSettings(theme, selectedScheme, fontSize);
+                      }
                     }}
-                    title={scheme.name}
+                    className="select"
+                    style={{
+                      backgroundColor: "var(--input-bg)",
+                      color: "var(--text-primary)",
+                      borderColor: "var(--border-color)",
+                    }}
                   >
-                    <div
-                      className="color-swatch"
-                      style={{ backgroundColor: scheme.primary }}
-                    ></div>
-                    <span className="color-name">{scheme.name}</span>
-                  </button>
-                ))}
+                    {colorSchemes.map((scheme) => (
+                      <option key={scheme.name} value={scheme.name}>
+                        {scheme.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </section>
 
             <section className="section">
               <h2>Font Size</h2>
               <div className="row">
-                <label className="radio-label">
+                <label className="input-label">
+                  Font Size (px):
                   <input
-                    type="radio"
-                    name="fontSize"
-                    value="small"
-                    checked={fontSize === "small"}
+                    type="number"
+                    min="8"
+                    max="24"
+                    step="1"
+                    value={fontSize}
                     onChange={(e) => {
-                      const newFontSize = e.target.value as FontSize;
-                      setFontSize(newFontSize);
-                      saveSettings(theme, colorScheme, newFontSize);
+                      const newFontSize = parseInt(e.target.value, 10);
+                      if (
+                        !isNaN(newFontSize) &&
+                        newFontSize >= 8 &&
+                        newFontSize <= 24
+                      ) {
+                        setFontSize(newFontSize);
+                        saveSettings(theme, colorScheme, newFontSize);
+                      }
                     }}
+                    className="input"
+                    style={{ width: "120px" }}
                   />
-                  Small
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="fontSize"
-                    value="medium"
-                    checked={fontSize === "medium"}
-                    onChange={(e) => {
-                      const newFontSize = e.target.value as FontSize;
-                      setFontSize(newFontSize);
-                      saveSettings(theme, colorScheme, newFontSize);
-                    }}
-                  />
-                  Medium
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="fontSize"
-                    value="large"
-                    checked={fontSize === "large"}
-                    onChange={(e) => {
-                      const newFontSize = e.target.value as FontSize;
-                      setFontSize(newFontSize);
-                      saveSettings(theme, colorScheme, newFontSize);
-                    }}
-                  />
-                  Large
                 </label>
               </div>
             </section>
