@@ -85,6 +85,8 @@ async fn start_scrcpy(
     turn_screen_off: bool,
     stay_awake: bool,
     show_touches: bool,
+    record: bool,
+    record_file: Option<String>,
 ) -> Result<(), String> {
     let mut cmd = Command::new("scrcpy");
     cmd.arg("-s").arg(&serial);
@@ -113,14 +115,39 @@ async fn start_scrcpy(
         cmd.arg("--show-touches");
     }
 
+    if record {
+        if let Some(file) = record_file {
+            cmd.arg("--record").arg(file);
+        } else {
+            return Err("Recording enabled but no file path provided".to_string());
+        }
+    }
+
     cmd.stdout(Stdio::null()).stderr(Stdio::null());
 
     cmd.spawn()
         .map_err(|e| format!("Failed to start scrcpy: {}", e))?;
 
     // For now, we don't store the child, so we can't stop it later.
+    // In a real app, you'd need to manage processes.
 
     Ok(())
+}
+
+#[tauri::command]
+async fn select_save_file() -> Result<Option<String>, String> {
+    let file_path = rfd::FileDialog::new()
+        .set_title("Select Recording Save Location")
+        .add_filter("MP4 Video", &["mp4"])
+        .add_filter("MKV Video", &["mkv"])
+        .add_filter("All Video Files", &["mp4", "mkv"])
+        .set_file_name("scrcpy_recording.mp4")
+        .save_file();
+
+    match file_path {
+        Some(path) => Ok(Some(path.to_string_lossy().to_string())),
+        None => Ok(None),
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -131,7 +158,8 @@ pub fn run() {
             greet,
             check_dependencies,
             list_devices,
-            start_scrcpy
+            start_scrcpy,
+            select_save_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

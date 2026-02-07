@@ -9,6 +9,7 @@ import {
   Bars3Icon,
   DocumentTextIcon,
   AdjustmentsHorizontalIcon,
+  VideoCameraIcon,
 } from "@heroicons/react/24/outline";
 import "./App.css";
 
@@ -90,8 +91,39 @@ function App() {
   const [colorScheme, setColorScheme] = useState<ColorScheme>(colorSchemes[0]);
   const [fontSize, setFontSize] = useState<number>(16);
 
+  // Recording state
+  const [recordingEnabled, setRecordingEnabled] = useState(false);
+  const [recordFile, setRecordFile] = useState<string>("");
+  const [recordFormat, setRecordFormat] = useState<"mp4" | "mkv">("mp4");
+
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
+
+  const toggleRecording = () => {
+    if (recordingEnabled && recordFile) {
+      // If disabling recording, clear the file path
+      setRecordFile("");
+    }
+    setRecordingEnabled(!recordingEnabled);
+  };
+
+  const selectSaveFile = async () => {
+    try {
+      const filePath: string | null = await invoke("select_save_file");
+      if (filePath) {
+        // Ensure the file has the correct extension
+        const extension = recordFormat;
+        const finalPath = filePath.endsWith(`.${extension}`)
+          ? filePath
+          : `${filePath}.${extension}`;
+        setRecordFile(finalPath);
+        addLog(`Recording file selected: ${finalPath}`);
+      }
+    } catch (e) {
+      console.error("Failed to select save file:", e);
+      addLog(`Failed to select save file: ${e}`);
+    }
+  };
 
   const tabs = [
     { id: "devices" as Tab, name: "Devices", icon: DevicePhoneMobileIcon },
@@ -262,8 +294,12 @@ function App() {
         turnScreenOff,
         stayAwake,
         showTouches,
+        record: recordingEnabled,
+        recordFile: recordingEnabled ? recordFile : undefined,
       });
-      addLog(`Scrcpy started successfully`);
+      addLog(
+        `Scrcpy started successfully${recordingEnabled ? " (recording enabled)" : ""}`,
+      );
     } catch (e) {
       console.error("Failed to start scrcpy:", e);
       addLog(`Failed to start scrcpy: ${e}`);
@@ -324,6 +360,59 @@ function App() {
                   </select>
                 </div>
               </div>
+            </section>
+
+            <section className="section">
+              <h2>
+                <VideoCameraIcon className="section-icon" />
+                Recording
+              </h2>
+              <div className="row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={recordingEnabled}
+                    onChange={() => toggleRecording()}
+                  />
+                  Enable Recording
+                </label>
+              </div>
+              {recordingEnabled && (
+                <div className="row">
+                  <div className="select-wrapper">
+                    <select
+                      value={recordFormat}
+                      onChange={(e) =>
+                        setRecordFormat(e.target.value as "mp4" | "mkv")
+                      }
+                      className="select"
+                      style={{
+                        backgroundColor: "var(--input-bg)",
+                        color: "var(--text-primary)",
+                        borderColor: "var(--border-color)",
+                      }}
+                    >
+                      <option value="mp4">MP4</option>
+                      <option value="mkv">MKV</option>
+                    </select>
+                  </div>
+                  <input
+                    type="text"
+                    value={recordFile}
+                    readOnly
+                    placeholder="Select save location..."
+                    className="input"
+                    style={{ flex: 1, marginLeft: "1rem" }}
+                  />
+                  <button
+                    className="btn btn-secondary"
+                    onClick={selectSaveFile}
+                    style={{ marginLeft: "0.5rem" }}
+                  >
+                    Browse
+                  </button>
+                </div>
+              )}
             </section>
 
             <section className="section">
