@@ -168,7 +168,7 @@ async fn start_scrcpy(
     display_id: Option<u32>,
     rotation: Option<u32>,
     crop: Option<String>,
-    lock_video_orientation: bool,
+    lock_video_orientation: Option<i32>,
     display_buffer: Option<u32>,
     window_x: Option<u32>,
     window_y: Option<u32>,
@@ -214,9 +214,8 @@ async fn start_scrcpy(
     }
 
     if audio_forwarding {
-        cmd.arg("--audio");
         if let Some(audio_bitrate_val) = audio_bitrate {
-            cmd.arg("--audio-bitrate")
+            cmd.arg("--audio-bit-rate")
                 .arg(audio_bitrate_val.to_string());
         }
     }
@@ -237,8 +236,9 @@ async fn start_scrcpy(
         cmd.arg("--crop").arg(crop);
     }
 
-    if lock_video_orientation {
-        cmd.arg("--lock-video-orientation");
+    if let Some(orientation) = lock_video_orientation {
+        cmd.arg("--lock-video-orientation")
+            .arg(orientation.to_string());
     }
 
     if let Some(display_buffer) = display_buffer {

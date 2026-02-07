@@ -2,17 +2,11 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   DevicePhoneMobileIcon,
-  PlayIcon,
   ArrowPathIcon,
-  Cog6ToothIcon,
   ExclamationTriangleIcon,
   Bars3Icon,
   DocumentTextIcon,
   AdjustmentsHorizontalIcon,
-  VideoCameraIcon,
-  MusicalNoteIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   WifiIcon,
   ComputerDesktopIcon,
   TrashIcon,
@@ -43,9 +37,9 @@ interface Preset {
   stayAwake: boolean;
   showTouches: boolean;
   displayId: number;
-  rotation: 0 | 90 | 180 | 270;
+  rotation: number;
   crop: string;
-  lockVideoOrientation: boolean;
+  lockVideoOrientation: number;
   displayBuffer: number;
   windowX: number;
   windowY: number;
@@ -60,6 +54,34 @@ interface ColorScheme {
   name: string;
   primary: string;
   primaryHover: string;
+}
+
+interface DeviceSettings {
+  name: string;
+  bitrate: number;
+  maxSize: number;
+  noControl: boolean;
+  turnScreenOff: boolean;
+  stayAwake: boolean;
+  showTouches: boolean;
+  recordingEnabled: boolean;
+  recordFile: string;
+  recordFormat: "mp4" | "mkv";
+  audioForwarding: boolean;
+  audioBitrate: number;
+  microphoneForwarding: boolean;
+  displayId: number;
+  rotation: number;
+  crop: string;
+  lockVideoOrientation: number;
+  displayBuffer: number;
+  windowX: number;
+  windowY: number;
+  windowWidth: number;
+  windowHeight: number;
+  alwaysOnTop: boolean;
+  windowBorderless: boolean;
+  fullscreen: boolean;
 }
 
 interface LogEntry {
@@ -139,9 +161,9 @@ function App() {
 
   // Display configuration state
   const [displayId, setDisplayId] = useState<number>(0);
-  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
+  const [rotation, setRotation] = useState<number>(0);
   const [crop, setCrop] = useState<string>("");
-  const [lockVideoOrientation, setLockVideoOrientation] = useState(false);
+  const [lockVideoOrientation, setLockVideoOrientation] = useState<number>(-1);
   const [displayBuffer, setDisplayBuffer] = useState<number>(0);
 
   // Window configuration state
@@ -149,6 +171,17 @@ function App() {
   const [windowY, setWindowY] = useState<number>(0);
   const [windowWidth, setWindowWidth] = useState<number>(0);
   const [windowHeight, setWindowHeight] = useState<number>(0);
+
+  // Device-specific state
+  const [deviceNames, setDeviceNames] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [deviceSettings, setDeviceSettings] = useState<
+    Map<string, DeviceSettings>
+  >(new Map());
+  const [showDeviceModal, setShowDeviceModal] = useState(false);
+  const [selectedDeviceForSettings, setSelectedDeviceForSettings] =
+    useState<string>("");
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [windowBorderless, setWindowBorderless] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -164,14 +197,6 @@ function App() {
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
-
-  const toggleRecording = () => {
-    if (recordingEnabled && recordFile) {
-      // If disabling recording, clear the file path
-      setRecordFile("");
-    }
-    setRecordingEnabled(!recordingEnabled);
-  };
 
   const selectSaveFile = async () => {
     try {
@@ -228,6 +253,17 @@ function App() {
     setFontSize(savedFontSize);
 
     applySettings(savedTheme, savedColorScheme, savedFontSize);
+
+    // Load device names and settings
+    const savedDeviceNames = localStorage.getItem("deviceNames");
+    if (savedDeviceNames) {
+      setDeviceNames(new Map(JSON.parse(savedDeviceNames)));
+    }
+
+    const savedDeviceSettings = localStorage.getItem("deviceSettings");
+    if (savedDeviceSettings) {
+      setDeviceSettings(new Map(JSON.parse(savedDeviceSettings)));
+    }
   };
 
   const applySettings = (
@@ -284,6 +320,108 @@ function App() {
     localStorage.setItem("scrcpy-colorScheme", newColorScheme.name);
     localStorage.setItem("scrcpy-fontSize", newFontSize.toString());
     applySettings(newTheme, newColorScheme, newFontSize);
+  };
+
+  const loadDeviceSettings = (serial: string) => {
+    const settings = deviceSettings.get(serial) || {
+      name: deviceNames.get(serial) || "",
+      bitrate: 8000000,
+      maxSize: 0,
+      noControl: false,
+      turnScreenOff: false,
+      stayAwake: false,
+      showTouches: false,
+      recordingEnabled: false,
+      recordFile: "",
+      recordFormat: "mp4",
+      audioForwarding: false,
+      audioBitrate: 128000,
+      microphoneForwarding: false,
+      displayId: 0,
+      rotation: 0,
+      crop: "",
+      lockVideoOrientation: -1,
+      displayBuffer: 0,
+      windowX: 0,
+      windowY: 0,
+      windowWidth: 0,
+      windowHeight: 0,
+      alwaysOnTop: false,
+      windowBorderless: false,
+      fullscreen: false,
+    };
+    setBitrate(settings.bitrate);
+    setMaxSize(settings.maxSize);
+    setNoControl(settings.noControl);
+    setTurnScreenOff(settings.turnScreenOff);
+    setStayAwake(settings.stayAwake);
+    setShowTouches(settings.showTouches);
+    setRecordingEnabled(settings.recordingEnabled);
+    setRecordFile(settings.recordFile);
+    setRecordFormat(settings.recordFormat);
+    setAudioForwarding(settings.audioForwarding);
+    setAudioBitrate(settings.audioBitrate);
+    setMicrophoneForwarding(settings.microphoneForwarding);
+    setDisplayId(settings.displayId);
+    setRotation(settings.rotation);
+    setCrop(settings.crop);
+    const lvo =
+      typeof settings.lockVideoOrientation === "number"
+        ? settings.lockVideoOrientation
+        : settings.lockVideoOrientation
+          ? 0
+          : -1;
+    setLockVideoOrientation(lvo);
+    setDisplayBuffer(settings.displayBuffer);
+    setWindowX(settings.windowX);
+    setWindowY(settings.windowY);
+    setWindowWidth(settings.windowWidth);
+    setWindowHeight(settings.windowHeight);
+    setAlwaysOnTop(settings.alwaysOnTop);
+    setWindowBorderless(settings.windowBorderless);
+    setFullscreen(settings.fullscreen);
+  };
+
+  const saveDeviceSettings = (serial: string) => {
+    const settings: DeviceSettings = {
+      name: deviceNames.get(serial) || "",
+      bitrate,
+      maxSize,
+      noControl,
+      turnScreenOff,
+      stayAwake,
+      showTouches,
+      recordingEnabled,
+      recordFile,
+      recordFormat,
+      audioForwarding,
+      audioBitrate,
+      microphoneForwarding,
+      displayId,
+      rotation,
+      crop,
+      lockVideoOrientation,
+      displayBuffer,
+      windowX,
+      windowY,
+      windowWidth,
+      windowHeight,
+      alwaysOnTop,
+      windowBorderless,
+      fullscreen,
+    };
+    const newSettings = new Map(deviceSettings);
+    newSettings.set(serial, settings);
+    setDeviceSettings(newSettings);
+    localStorage.setItem(
+      "deviceSettings",
+      JSON.stringify(Array.from(newSettings)),
+    );
+    // Also save deviceNames
+    localStorage.setItem(
+      "deviceNames",
+      JSON.stringify(Array.from(deviceNames)),
+    );
   };
 
   const loadPresets = () => {
@@ -458,37 +596,73 @@ function App() {
       return;
     }
 
+    const settings = deviceSettings.get(deviceSerial) || {
+      name: "",
+      bitrate: 8000000,
+      maxSize: 0,
+      noControl: false,
+      turnScreenOff: false,
+      stayAwake: false,
+      showTouches: false,
+      recordingEnabled: false,
+      recordFile: "",
+      recordFormat: "mp4" as "mp4" | "mkv",
+      audioForwarding: false,
+      audioBitrate: 128,
+      microphoneForwarding: false,
+      displayId: 0,
+      rotation: 0,
+      crop: "",
+      lockVideoOrientation: -1,
+      displayBuffer: 0,
+      windowX: 0,
+      windowY: 0,
+      windowWidth: 0,
+      windowHeight: 0,
+      alwaysOnTop: false,
+      windowBorderless: false,
+      fullscreen: false,
+    };
+
     addLog(`Starting scrcpy for device: ${deviceSerial}`);
     try {
       await invoke("start_scrcpy", {
         serial: deviceSerial,
-        bitrate: bitrate > 0 ? bitrate : undefined,
-        maxSize: maxSize > 0 ? maxSize : undefined,
-        noControl,
-        turnScreenOff,
-        stayAwake,
-        showTouches,
-        record: recordingEnabled,
-        recordFile: recordingEnabled ? recordFile : undefined,
-        audioForwarding: audioForwarding,
-        audioBitrate: audioForwarding ? audioBitrate : undefined,
-        microphoneForwarding: microphoneForwarding,
-        displayId: displayId,
-        rotation,
-        crop: crop.trim() || undefined,
-        lockVideoOrientation,
-        displayBuffer: displayBuffer > 0 ? displayBuffer : undefined,
-        windowX: windowX > 0 ? windowX : undefined,
-        windowY: windowY > 0 ? windowY : undefined,
-        windowWidth: windowWidth > 0 ? windowWidth : undefined,
-        windowHeight: windowHeight > 0 ? windowHeight : undefined,
-        alwaysOnTop,
-        windowBorderless,
-        fullscreen,
+        bitrate: settings.bitrate > 0 ? settings.bitrate : undefined,
+        maxSize: settings.maxSize > 0 ? settings.maxSize : undefined,
+        noControl: settings.noControl,
+        turnScreenOff: settings.turnScreenOff,
+        stayAwake: settings.stayAwake,
+        showTouches: settings.showTouches,
+        record: settings.recordingEnabled,
+        recordFile: settings.recordingEnabled ? settings.recordFile : undefined,
+        audioForwarding: settings.audioForwarding,
+        audioBitrate: settings.audioForwarding
+          ? settings.audioBitrate
+          : undefined,
+        microphoneForwarding: settings.microphoneForwarding,
+        displayId: settings.displayId,
+        rotation: settings.rotation,
+        crop: settings.crop.trim() || undefined,
+        lockVideoOrientation:
+          settings.lockVideoOrientation >= 0
+            ? settings.lockVideoOrientation
+            : null,
+        displayBuffer:
+          settings.displayBuffer > 0 ? settings.displayBuffer : undefined,
+        windowX: settings.windowX > 0 ? settings.windowX : undefined,
+        windowY: settings.windowY > 0 ? settings.windowY : undefined,
+        windowWidth:
+          settings.windowWidth > 0 ? settings.windowWidth : undefined,
+        windowHeight:
+          settings.windowHeight > 0 ? settings.windowHeight : undefined,
+        alwaysOnTop: settings.alwaysOnTop,
+        windowBorderless: settings.windowBorderless,
+        fullscreen: settings.fullscreen,
       });
       setActiveDevices((prev) => [...prev, deviceSerial]);
       addLog(
-        `Scrcpy started successfully${recordingEnabled ? " (recording enabled)" : ""}`,
+        `Scrcpy started successfully${settings.recordingEnabled ? " (recording enabled)" : ""}`,
         "SUCCESS",
       );
     } catch (e) {
@@ -615,9 +789,16 @@ function App() {
                       <div
                         key={d.serial}
                         className={`device-card ${d.status === "device" ? "online" : "offline"}`}
+                        onDoubleClick={() => {
+                          loadDeviceSettings(d.serial);
+                          setSelectedDeviceForSettings(d.serial);
+                          setShowDeviceModal(true);
+                        }}
                       >
                         <div className="device-header">
-                          <div className="device-serial">{d.serial}</div>
+                          <div className="device-serial">
+                            {deviceNames.get(d.serial) || d.serial}
+                          </div>
                           <div className="device-status">
                             <span
                               className={`status-dot ${d.status === "device" ? "online" : "offline"}`}
@@ -749,380 +930,385 @@ function App() {
               )}
             </section>
 
-            <section className="section">
-              <h2>
-                <VideoCameraIcon className="section-icon" />
-                Recording
-              </h2>
-              <div className="row">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={recordingEnabled}
-                    onChange={() => toggleRecording()}
-                  />
-                  Enable Recording
-                </label>
-              </div>
-              {recordingEnabled && (
-                <div className="row">
-                  <div className="select-wrapper">
-                    <select
-                      value={recordFormat}
-                      onChange={(e) =>
-                        setRecordFormat(e.target.value as "mp4" | "mkv")
-                      }
-                      className="select"
-                      style={{
-                        backgroundColor: "var(--input-bg)",
-                        color: "var(--text-primary)",
-                        borderColor: "var(--border-color)",
-                      }}
-                    >
-                      <option value="mp4">MP4</option>
-                      <option value="mkv">MKV</option>
-                    </select>
-                  </div>
-                  <input
-                    type="text"
-                    value={recordFile}
-                    readOnly
-                    placeholder="Select save location..."
-                    className="input"
-                    style={{ flex: 1, marginLeft: "1rem" }}
-                  />
-                  <button
-                    className="btn btn-secondary"
-                    onClick={selectSaveFile}
-                    style={{ marginLeft: "0.5rem" }}
-                  >
-                    Browse
-                  </button>
-                </div>
-              )}
-            </section>
-
-            <section className="section">
-              <h2>
-                <MusicalNoteIcon className="section-icon" />
-                Audio
-              </h2>
-              <div className="row">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={audioForwarding}
-                    onChange={(e) => setAudioForwarding(e.target.checked)}
-                  />
-                  Audio Forwarding
-                </label>
-              </div>
-              {audioForwarding && (
-                <div className="row">
-                  <label className="input-label">
-                    Audio Bitrate (kbps):
-                    <input
-                      type="number"
-                      min="32"
-                      max="512"
-                      step="32"
-                      value={audioBitrate}
-                      onChange={(e) => setAudioBitrate(Number(e.target.value))}
-                      className="input"
-                      style={{ width: "120px" }}
-                    />
-                  </label>
-                </div>
-              )}
-              <div className="row">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={microphoneForwarding}
-                    onChange={(e) => setMicrophoneForwarding(e.target.checked)}
-                  />
-                  Microphone Forwarding
-                </label>
-              </div>
-            </section>
-
-            <section className="section">
-              <h2>Dependencies</h2>
-              <div className="dependency-status-large">
-                <div className="dependency-item-large">
-                  <span className="dependency-icon">
-                    {dependencies?.adb ? (
-                      <CheckCircleIcon className="status-icon ready" />
-                    ) : (
-                      <XCircleIcon className="status-icon not-ready" />
-                    )}
-                  </span>
-                  <div className="dependency-info">
-                    <span className="dependency-name">ADB</span>
-                    <span className="dependency-desc">
-                      Android Debug Bridge
-                    </span>
-                  </div>
-                </div>
-                <div className="dependency-item-large">
-                  <span className="dependency-icon">
-                    {dependencies?.scrcpy ? (
-                      <CheckCircleIcon className="status-icon ready" />
-                    ) : (
-                      <XCircleIcon className="status-icon not-ready" />
-                    )}
-                  </span>
-                  <div className="dependency-info">
-                    <span className="dependency-name">Scrcpy</span>
-                    <span className="dependency-desc">
-                      Screen mirroring tool
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={checkDependencies}
-                >
-                  <ArrowPathIcon className="btn-icon" />
-                  Check Dependencies
-                </button>
-              </div>
-            </section>
-
-            <section className="section">
-              <h2>
-                <Cog6ToothIcon className="section-icon" />
-                Options
-              </h2>
-              <div className="options-grid">
-                <div className="option-group">
-                  <label className="input-label">
-                    Bitrate (bps):
-                    <input
-                      type="number"
-                      value={bitrate}
-                      onChange={(e) => setBitrate(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Max Size (px):
-                    <input
-                      type="number"
-                      value={maxSize}
-                      onChange={(e) => setMaxSize(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Display ID:
-                    <input
-                      type="number"
-                      value={displayId}
-                      onChange={(e) => setDisplayId(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                </div>
-                <div className="option-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={noControl}
-                      onChange={(e) => setNoControl(e.target.checked)}
-                    />
-                    No Control
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={turnScreenOff}
-                      onChange={(e) => setTurnScreenOff(e.target.checked)}
-                    />
-                    Turn Screen Off
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={stayAwake}
-                      onChange={(e) => setStayAwake(e.target.checked)}
-                    />
-                    Stay Awake
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={showTouches}
-                      onChange={(e) => setShowTouches(e.target.checked)}
-                    />
-                    Show Touches
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={lockVideoOrientation}
-                      onChange={(e) =>
-                        setLockVideoOrientation(e.target.checked)
-                      }
-                    />
-                    Lock Video Orientation
-                  </label>
-                </div>
-                <div className="option-group">
-                  <label className="input-label">
-                    Orientation (°):
-                    <select
-                      value={rotation}
-                      onChange={(e) =>
-                        setRotation(
-                          Number(e.target.value) as 0 | 90 | 180 | 270,
-                        )
-                      }
-                      className="select"
-                      style={{
-                        backgroundColor: "var(--input-bg)",
-                        color: "var(--text-primary)",
-                        borderColor: "var(--border-color)",
-                      }}
-                    >
-                      <option value={0}>0°</option>
-                      <option value={90}>90°</option>
-                      <option value={180}>180°</option>
-                      <option value={270}>270°</option>
-                    </select>
-                  </label>
-                  <label className="input-label">
-                    Crop (width:height:x:y):
-                    <input
-                      type="text"
-                      value={crop}
-                      onChange={(e) => setCrop(e.target.value)}
-                      placeholder="e.g., 1920:1080:0:0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Display Buffer (MB):
-                    <input
-                      type="number"
-                      value={displayBuffer}
-                      onChange={(e) => setDisplayBuffer(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Window X:
-                    <input
-                      type="number"
-                      value={windowX}
-                      onChange={(e) => setWindowX(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Window Y:
-                    <input
-                      type="number"
-                      value={windowY}
-                      onChange={(e) => setWindowY(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Window Width:
-                    <input
-                      type="number"
-                      value={windowWidth}
-                      onChange={(e) => setWindowWidth(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                  <label className="input-label">
-                    Window Height:
-                    <input
-                      type="number"
-                      value={windowHeight}
-                      onChange={(e) => setWindowHeight(Number(e.target.value))}
-                      min="0"
-                      className="input"
-                    />
-                  </label>
-                </div>
-                <div className="option-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={alwaysOnTop}
-                      onChange={(e) => setAlwaysOnTop(e.target.checked)}
-                    />
-                    Always on Top
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={windowBorderless}
-                      onChange={(e) => setWindowBorderless(e.target.checked)}
-                    />
-                    Borderless Window
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={fullscreen}
-                      onChange={(e) => setFullscreen(e.target.checked)}
-                    />
-                    Fullscreen
-                  </label>
-                </div>
-              </div>
-            </section>
-
-            <div className="actions">
-              <div className="select-wrapper">
-                <select
-                  key={`device-select-${theme}`}
-                  value={selectedDevice}
-                  onChange={(e) => setSelectedDevice(e.target.value)}
-                  className="select"
-                  style={{
-                    backgroundColor: "var(--input-bg)",
-                    color: "var(--text-primary)",
-                    borderColor: "var(--border-color)",
-                  }}
-                >
-                  <option value="">Select a device for options</option>
-                  {devices
-                    .filter((d) => d.status === "device")
-                    .map((d) => (
-                      <option key={d.serial} value={d.serial}>
-                        {d.serial} {d.model ? `(${d.model})` : ""}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <button
-                className="btn btn-primary"
-                onClick={() => startScrcpy()}
-                disabled={
-                  loading ||
-                  !selectedDevice ||
-                  !dependencies?.adb ||
-                  !dependencies?.scrcpy
-                }
+            {showDeviceModal && selectedDeviceForSettings && (
+              <div
+                className="modal-overlay"
+                onClick={() => setShowDeviceModal(false)}
               >
-                <PlayIcon className="btn-icon" />
-                {loading ? "Starting..." : "Start Scrcpy"}
-              </button>
-            </div>
+                <div
+                  className="modal-content"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="modal-header">
+                    <h3>Device Settings for {selectedDeviceForSettings}</h3>
+                    <button
+                      className="modal-close"
+                      onClick={() => setShowDeviceModal(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="modal-body">
+                    <section className="section">
+                      <h2>Device Name</h2>
+                      <div className="row">
+                        <label className="input-label">
+                          Name:
+                          <input
+                            type="text"
+                            value={
+                              deviceNames.get(selectedDeviceForSettings) || ""
+                            }
+                            onChange={(e) => {
+                              const newNames = new Map(deviceNames);
+                              newNames.set(
+                                selectedDeviceForSettings,
+                                e.target.value,
+                              );
+                              setDeviceNames(newNames);
+                            }}
+                            placeholder="Enter device name..."
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                    </section>
+                    <section className="section">
+                      <h2>General</h2>
+                      <div className="row">
+                        <label className="input-label">
+                          Bitrate (bps):
+                          <input
+                            type="number"
+                            value={bitrate}
+                            onChange={(e) => setBitrate(Number(e.target.value))}
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="input-label">
+                          Max Size:
+                          <input
+                            type="number"
+                            value={maxSize}
+                            onChange={(e) => setMaxSize(Number(e.target.value))}
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={noControl}
+                            onChange={(e) => setNoControl(e.target.checked)}
+                          />
+                          No Control
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={turnScreenOff}
+                            onChange={(e) => setTurnScreenOff(e.target.checked)}
+                          />
+                          Turn Screen Off
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={stayAwake}
+                            onChange={(e) => setStayAwake(e.target.checked)}
+                          />
+                          Stay Awake
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={showTouches}
+                            onChange={(e) => setShowTouches(e.target.checked)}
+                          />
+                          Show Touches
+                        </label>
+                      </div>
+                    </section>
+                    <section className="section">
+                      <h2>Recording</h2>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={recordingEnabled}
+                            onChange={(e) =>
+                              setRecordingEnabled(e.target.checked)
+                            }
+                          />
+                          Enable Recording
+                        </label>
+                      </div>
+                      {recordingEnabled && (
+                        <>
+                          <div className="row">
+                            <label className="input-label">
+                              File Path:
+                              <input
+                                type="text"
+                                value={recordFile}
+                                onChange={(e) => setRecordFile(e.target.value)}
+                                className="input"
+                              />
+                            </label>
+                            <button
+                              className="btn btn-secondary"
+                              onClick={selectSaveFile}
+                            >
+                              Browse
+                            </button>
+                          </div>
+                          <div className="row">
+                            <label className="input-label">
+                              Format:
+                              <select
+                                value={recordFormat}
+                                onChange={(e) =>
+                                  setRecordFormat(
+                                    e.target.value as "mp4" | "mkv",
+                                  )
+                                }
+                                className="select"
+                              >
+                                <option value="mp4">MP4</option>
+                                <option value="mkv">MKV</option>
+                              </select>
+                            </label>
+                          </div>
+                        </>
+                      )}
+                    </section>
+                    <section className="section">
+                      <h2>Audio</h2>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={audioForwarding}
+                            onChange={(e) =>
+                              setAudioForwarding(e.target.checked)
+                            }
+                          />
+                          Audio Forwarding
+                        </label>
+                      </div>
+                      {audioForwarding && (
+                        <div className="row">
+                          <label className="input-label">
+                            Audio Bitrate (kbps):
+                            <input
+                              type="number"
+                              value={audioBitrate / 1000}
+                              onChange={(e) =>
+                                setAudioBitrate(Number(e.target.value) * 1000)
+                              }
+                              className="input"
+                            />
+                          </label>
+                        </div>
+                      )}
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={microphoneForwarding}
+                            onChange={(e) =>
+                              setMicrophoneForwarding(e.target.checked)
+                            }
+                          />
+                          Microphone Forwarding
+                        </label>
+                      </div>
+                    </section>
+                    <section className="section">
+                      <h2>Display</h2>
+                      <div className="row">
+                        <label className="input-label">
+                          Display ID:
+                          <input
+                            type="number"
+                            value={displayId}
+                            onChange={(e) =>
+                              setDisplayId(Number(e.target.value))
+                            }
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="input-label">
+                          Orientation:
+                          <select
+                            value={rotation.toString()}
+                            onChange={(e) =>
+                              setRotation(Number(e.target.value))
+                            }
+                            className="select"
+                          >
+                            <option value="0">0°</option>
+                            <option value="90">90°</option>
+                            <option value="180">180°</option>
+                            <option value="270">270°</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="input-label">
+                          Crop (width:height:x:y):
+                          <input
+                            type="text"
+                            value={crop}
+                            onChange={(e) => setCrop(e.target.value)}
+                            className="input"
+                            placeholder="e.g. 1920:1080:0:0"
+                          />
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="input-label">
+                          Lock Video Orientation:
+                          <select
+                            value={lockVideoOrientation.toString()}
+                            onChange={(e) =>
+                              setLockVideoOrientation(Number(e.target.value))
+                            }
+                            className="select"
+                          >
+                            <option value="-1">Unlocked</option>
+                            <option value="0">0°</option>
+                            <option value="1">90°</option>
+                            <option value="2">180°</option>
+                            <option value="3">270°</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="input-label">
+                          Display Buffer (ms):
+                          <input
+                            type="number"
+                            value={displayBuffer}
+                            onChange={(e) =>
+                              setDisplayBuffer(Number(e.target.value))
+                            }
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                    </section>
+                    <section className="section">
+                      <h2>Window</h2>
+                      <div className="row">
+                        <label className="input-label">
+                          Window X:
+                          <input
+                            type="number"
+                            value={windowX}
+                            onChange={(e) => setWindowX(Number(e.target.value))}
+                            className="input"
+                          />
+                        </label>
+                        <label className="input-label">
+                          Window Y:
+                          <input
+                            type="number"
+                            value={windowY}
+                            onChange={(e) => setWindowY(Number(e.target.value))}
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="input-label">
+                          Window Width:
+                          <input
+                            type="number"
+                            value={windowWidth}
+                            onChange={(e) =>
+                              setWindowWidth(Number(e.target.value))
+                            }
+                            className="input"
+                          />
+                        </label>
+                        <label className="input-label">
+                          Window Height:
+                          <input
+                            type="number"
+                            value={windowHeight}
+                            onChange={(e) =>
+                              setWindowHeight(Number(e.target.value))
+                            }
+                            className="input"
+                          />
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={alwaysOnTop}
+                            onChange={(e) => setAlwaysOnTop(e.target.checked)}
+                          />
+                          Always on Top
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={windowBorderless}
+                            onChange={(e) =>
+                              setWindowBorderless(e.target.checked)
+                            }
+                          />
+                          Borderless
+                        </label>
+                      </div>
+                      <div className="row">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={fullscreen}
+                            onChange={(e) => setFullscreen(e.target.checked)}
+                          />
+                          Fullscreen
+                        </label>
+                      </div>
+                    </section>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setShowDeviceModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        saveDeviceSettings(selectedDeviceForSettings);
+                        setShowDeviceModal(false);
+                      }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case "presets":
