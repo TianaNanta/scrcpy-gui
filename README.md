@@ -1,6 +1,35 @@
-# Tauri + React + Typescript
+# Scrcpy GUI
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A beautiful graphical user interface for [scrcpy](https://github.com/Genymobile/scrcpy), built with Tauri, React, and TypeScript using Bun as the package manager.
+
+## Features
+
+- List connected Android devices
+- Start scrcpy mirroring with customizable options
+- Modern, beautiful UI with icons and responsive design
+- Dependency checks for ADB and scrcpy
+
+## Prerequisites
+
+- [scrcpy](https://github.com/Genymobile/scrcpy) installed on your system
+- Android device with USB debugging enabled
+- ADB (Android Debug Bridge) installed
+
+## Installation
+
+1. Clone this repository
+2. Install dependencies: `bun install`
+3. Run in development: `bun run tauri dev`
+4. Build for production: `bun run tauri build`
+
+## Usage
+
+1. Connect your Android device via USB
+2. Enable USB debugging on the device
+3. Run the app
+4. Select your device from the list
+5. Adjust options if needed (bitrate, max size)
+6. Click "Start Scrcpy"
 
 ## Recommended IDE Setup
 
