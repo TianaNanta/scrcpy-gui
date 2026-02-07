@@ -893,6 +893,27 @@ function App() {
               </div>
             </section>
 
+            <section className="section">
+              <h2>Recent Activity</h2>
+              <div className="logs-container">
+                {logs
+                  .slice(-3)
+                  .reverse()
+                  .map((log, index) => (
+                    <div
+                      key={index}
+                      className={`log-entry log-${log.level.toLowerCase()}`}
+                    >
+                      <span className="log-timestamp">
+                        {new Date(log.timestamp).toLocaleTimeString()}
+                      </span>
+                      <span className="log-level">{log.level}</span>
+                      <span className="log-message">{log.message}</span>
+                    </div>
+                  ))}
+              </div>
+            </section>
+
             {showPairModal && (
               <div
                 className="modal-overlay"
