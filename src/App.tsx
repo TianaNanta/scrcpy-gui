@@ -10,6 +10,7 @@ import {
   DocumentTextIcon,
   AdjustmentsHorizontalIcon,
   VideoCameraIcon,
+  MusicalNoteIcon,
 } from "@heroicons/react/24/outline";
 import "./App.css";
 
@@ -95,6 +96,11 @@ function App() {
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [recordFile, setRecordFile] = useState<string>("");
   const [recordFormat, setRecordFormat] = useState<"mp4" | "mkv">("mp4");
+
+  // Audio state
+  const [audioForwarding, setAudioForwarding] = useState(false);
+  const [audioBitrate, setAudioBitrate] = useState<number>(128);
+  const [microphoneForwarding, setMicrophoneForwarding] = useState(false);
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -296,6 +302,9 @@ function App() {
         showTouches,
         record: recordingEnabled,
         recordFile: recordingEnabled ? recordFile : undefined,
+        audio_forwarding: audioForwarding,
+        audio_bitrate: audioForwarding ? audioBitrate : undefined,
+        microphone_forwarding: microphoneForwarding,
       });
       addLog(
         `Scrcpy started successfully${recordingEnabled ? " (recording enabled)" : ""}`,
@@ -413,6 +422,50 @@ function App() {
                   </button>
                 </div>
               )}
+            </section>
+
+            <section className="section">
+              <h2>
+                <MusicalNoteIcon className="section-icon" />
+                Audio
+              </h2>
+              <div className="row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={audioForwarding}
+                    onChange={(e) => setAudioForwarding(e.target.checked)}
+                  />
+                  Audio Forwarding
+                </label>
+              </div>
+              {audioForwarding && (
+                <div className="row">
+                  <label className="input-label">
+                    Audio Bitrate (kbps):
+                    <input
+                      type="number"
+                      min="32"
+                      max="512"
+                      step="32"
+                      value={audioBitrate}
+                      onChange={(e) => setAudioBitrate(Number(e.target.value))}
+                      className="input"
+                      style={{ width: "120px" }}
+                    />
+                  </label>
+                </div>
+              )}
+              <div className="row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={microphoneForwarding}
+                    onChange={(e) => setMicrophoneForwarding(e.target.checked)}
+                  />
+                  Microphone Forwarding
+                </label>
+              </div>
             </section>
 
             <section className="section">

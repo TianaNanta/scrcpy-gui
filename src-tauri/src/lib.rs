@@ -87,6 +87,9 @@ async fn start_scrcpy(
     show_touches: bool,
     record: bool,
     record_file: Option<String>,
+    audio_forwarding: bool,
+    audio_bitrate: Option<u32>,
+    microphone_forwarding: bool,
 ) -> Result<(), String> {
     let mut cmd = Command::new("scrcpy");
     cmd.arg("-s").arg(&serial);
@@ -121,6 +124,18 @@ async fn start_scrcpy(
         } else {
             return Err("Recording enabled but no file path provided".to_string());
         }
+    }
+
+    if audio_forwarding {
+        cmd.arg("--audio");
+        if let Some(audio_bitrate_val) = audio_bitrate {
+            cmd.arg("--audio-bitrate")
+                .arg(audio_bitrate_val.to_string());
+        }
+    }
+
+    if microphone_forwarding {
+        cmd.arg("--microphone");
     }
 
     cmd.stdout(Stdio::null()).stderr(Stdio::null());
