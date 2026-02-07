@@ -20,6 +20,10 @@ import "./App.css";
 interface Device {
   serial: string;
   status: string;
+  model?: string;
+  android_version?: string;
+  battery_level?: number;
+  is_wireless: boolean;
 }
 
 interface Dependencies {
@@ -317,6 +321,37 @@ function App() {
     }
   };
 
+  const disconnectWireless = async (serial: string) => {
+    const parts = serial.split(":");
+    if (parts.length !== 2) {
+      addLog("Invalid wireless device serial", "ERROR");
+      return;
+    }
+    const ip = parts[0];
+    const port = parseInt(parts[1], 10);
+    if (isNaN(port)) {
+      addLog("Invalid port in serial", "ERROR");
+      return;
+    }
+
+    setWirelessConnecting(true);
+    addLog(`Disconnecting wireless device ${ip}:${port}`, "INFO");
+
+    try {
+      await invoke("disconnect_wireless_device", { ip, port });
+      addLog(
+        `Successfully disconnected wireless device ${ip}:${port}`,
+        "SUCCESS",
+      );
+      // Refresh device list
+      listDevices();
+    } catch (error) {
+      addLog(`Failed to disconnect wireless device: ${error}`, "ERROR");
+    } finally {
+      setWirelessConnecting(false);
+    }
+  };
+
   async function checkDependencies() {
     try {
       const deps: Dependencies = await invoke("check_dependencies");
@@ -345,13 +380,14 @@ function App() {
     }
   }
 
-  async function startScrcpy() {
-    if (!selectedDevice) return;
+  async function startScrcpy(serial?: string) {
+    const deviceSerial = serial || selectedDevice;
+    if (!deviceSerial) return;
     setLoading(true);
-    addLog(`Starting scrcpy for device: ${selectedDevice}`);
+    addLog(`Starting scrcpy for device: ${deviceSerial}`);
     try {
       await invoke("start_scrcpy", {
-        serial: selectedDevice,
+        serial: deviceSerial,
         bitrate: bitrate > 0 ? bitrate : undefined,
         maxSize: maxSize > 0 ? maxSize : undefined,
         noControl,
@@ -401,32 +437,66 @@ function App() {
             )}
 
             <section className="section">
-              <h2>Device Selection</h2>
+              <h2>Device List</h2>
               <div className="row">
                 <button className="btn btn-secondary" onClick={listDevices}>
                   <ArrowPathIcon className="btn-icon" />
                   Refresh Devices
                 </button>
-                <div className="select-wrapper">
-                  <select
-                    key={`device-select-${theme}`}
-                    value={selectedDevice}
-                    onChange={(e) => setSelectedDevice(e.target.value)}
-                    className="select"
-                    style={{
-                      backgroundColor: "var(--input-bg)",
-                      color: "var(--text-primary)",
-                      borderColor: "var(--border-color)",
-                    }}
+              </div>
+              <div className="devices-list">
+                {devices.map((d) => (
+                  <div
+                    key={d.serial}
+                    className={`device-card ${d.status === "device" ? "online" : "offline"}`}
                   >
-                    <option value="">Select a device</option>
-                    {devices.map((d) => (
-                      <option key={d.serial} value={d.serial}>
-                        {d.serial} ({d.status})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <div className="device-header">
+                      <div className="device-serial">{d.serial}</div>
+                      <div className="device-status">
+                        <span
+                          className={`status-dot ${d.status === "device" ? "online" : "offline"}`}
+                        ></span>
+                        {d.status}
+                        {d.is_wireless && (
+                          <WifiIcon className="wireless-icon" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="device-info">
+                      {d.model && <div>Model: {d.model}</div>}
+                      {d.android_version && (
+                        <div>Android: {d.android_version}</div>
+                      )}
+                      {d.battery_level !== undefined && (
+                        <div>Battery: {d.battery_level}%</div>
+                      )}
+                    </div>
+                    <div className="device-actions">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => startScrcpy(d.serial)}
+                        disabled={
+                          loading ||
+                          !dependencies?.adb ||
+                          !dependencies?.scrcpy ||
+                          d.status !== "device"
+                        }
+                      >
+                        <PlayIcon className="btn-icon" />
+                        Start Scrcpy
+                      </button>
+                      {d.is_wireless && (
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => disconnectWireless(d.serial)}
+                          disabled={wirelessConnecting}
+                        >
+                          Disconnect
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
 
@@ -704,9 +774,31 @@ function App() {
             </section>
 
             <div className="actions">
+              <div className="select-wrapper">
+                <select
+                  key={`device-select-${theme}`}
+                  value={selectedDevice}
+                  onChange={(e) => setSelectedDevice(e.target.value)}
+                  className="select"
+                  style={{
+                    backgroundColor: "var(--input-bg)",
+                    color: "var(--text-primary)",
+                    borderColor: "var(--border-color)",
+                  }}
+                >
+                  <option value="">Select a device for options</option>
+                  {devices
+                    .filter((d) => d.status === "device")
+                    .map((d) => (
+                      <option key={d.serial} value={d.serial}>
+                        {d.serial} {d.model ? `(${d.model})` : ""}
+                      </option>
+                    ))}
+                </select>
+              </div>
               <button
                 className="btn btn-primary"
-                onClick={startScrcpy}
+                onClick={() => startScrcpy()}
                 disabled={
                   loading ||
                   !selectedDevice ||

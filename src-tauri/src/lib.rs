@@ -43,6 +43,57 @@ async fn check_dependencies() -> Dependencies {
 struct Device {
     serial: String,
     status: String,
+    model: Option<String>,
+    android_version: Option<String>,
+    battery_level: Option<i32>,
+    is_wireless: bool,
+}
+
+#[derive(serde::Serialize)]
+struct DeviceHealth {
+    battery_level: Option<i32>,
+}
+
+async fn get_prop(serial: &str, prop: &str) -> Result<String, String> {
+    let output = Command::new("adb")
+        .args(["-s", serial, "shell", "getprop", prop])
+        .stdout(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to get prop {}: {}", prop, e))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        Err("Command failed".to_string())
+    }
+}
+
+async fn get_battery_level(serial: &str) -> Result<i32, String> {
+    let output = Command::new("adb")
+        .args(["-s", serial, "shell", "dumpsys", "battery"])
+        .stdout(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to get battery: {}", e))?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            if line.contains("level:") {
+                let parts: Vec<&str> = line.split(':').collect();
+                if parts.len() == 2 {
+                    return parts[1]
+                        .trim()
+                        .parse()
+                        .map_err(|_| "Parse error".to_string());
+                }
+            }
+        }
+        Err("Level not found".to_string())
+    } else {
+        Err("Command failed".to_string())
+    }
 }
 
 #[tauri::command]
@@ -66,9 +117,26 @@ async fn list_devices() -> Result<Vec<Device>, String> {
         // Skip "List of devices attached"
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
+            let serial = parts[0].to_string();
+            let status = parts[1].to_string();
+            let is_wireless = serial.contains(':');
+
+            let (model, android_version, battery_level) = if status == "device" {
+                let model = get_prop(&serial, "ro.product.model").await.ok();
+                let android_version = get_prop(&serial, "ro.build.version.release").await.ok();
+                let battery_level = get_battery_level(&serial).await.ok();
+                (model, android_version, battery_level)
+            } else {
+                (None, None, None)
+            };
+
             devices.push(Device {
-                serial: parts[0].to_string(),
-                status: parts[1].to_string(),
+                serial,
+                status,
+                model,
+                android_version,
+                battery_level,
+                is_wireless,
             });
         }
     }
@@ -206,6 +274,12 @@ async fn disconnect_wireless_device(ip: String, port: u16) -> Result<(), String>
     }
 }
 
+#[tauri::command]
+async fn get_device_health(serial: String) -> Result<DeviceHealth, String> {
+    let battery_level = get_battery_level(&serial).await.ok();
+    Ok(DeviceHealth { battery_level })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -217,7 +291,8 @@ pub fn run() {
             start_scrcpy,
             select_save_file,
             connect_wireless_device,
-            disconnect_wireless_device
+            disconnect_wireless_device,
+            get_device_health
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
