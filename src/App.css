@@ -438,10 +438,61 @@ select.select option {
 .log-entry {
     padding: 0.25rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
 }
 
 .log-entry:last-child {
     border-bottom: none;
+}
+
+.log-timestamp {
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size) * 0.75);
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.log-level {
+    font-weight: 600;
+    min-width: 60px;
+    flex-shrink: 0;
+    text-align: center;
+    border-radius: 4px;
+    padding: 0.125rem 0.375rem;
+    font-size: calc(var(--font-size) * 0.75);
+}
+
+.log-message {
+    flex: 1;
+    word-wrap: break-word;
+}
+
+/* Log Level Colors */
+.log-info .log-level {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.log-error .log-level {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.log-warn .log-level {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.log-success .log-level {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.log-debug .log-level {
+    background: rgba(107, 114, 128, 0.2);
+    color: #6b7280;
 }
 
 @media (max-width: 768px) {

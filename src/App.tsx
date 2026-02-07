@@ -44,8 +44,15 @@ interface ColorScheme {
   primaryHover: string;
 }
 
+interface LogEntry {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+}
+
 type Tab = "devices" | "presets" | "logs" | "settings";
 type Theme = "light" | "dark" | "system";
+type LogLevel = "INFO" | "ERROR" | "WARN" | "SUCCESS" | "DEBUG";
 
 const colorSchemes: ColorScheme[] = [
   {
@@ -87,7 +94,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dependencies, setDependencies] = useState<Dependencies | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [currentTab, setCurrentTab] = useState<Tab>("devices");
 
   // Settings state
@@ -133,7 +140,7 @@ function App() {
           ? filePath
           : `${filePath}.${extension}`;
         setRecordFile(finalPath);
-        addLog(`Recording file selected: ${finalPath}`);
+        addLog(`Recording file selected: ${finalPath}`, "INFO");
       }
     } catch (e) {
       console.error("Failed to select save file:", e);
@@ -268,18 +275,26 @@ function App() {
     setShowTouches(preset.showTouches);
   };
 
-  const addLog = (message: string) => {
-    setLogs((prev) => [...prev, `${new Date().toISOString()}: ${message}`]);
+  const addLog = (message: string, level: LogLevel = "INFO") => {
+    const newLog: LogEntry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+    };
+    setLogs((prev) => [...prev, newLog]);
   };
 
   const setupWirelessConnection = async () => {
     if (!deviceIp.trim()) {
-      addLog("Error: IP address is required for wireless connection");
+      addLog("Error: IP address is required for wireless connection", "ERROR");
       return;
     }
 
     setWirelessConnecting(true);
-    addLog(`Attempting wireless connection to ${deviceIp}:${devicePort}`);
+    addLog(
+      `Attempting wireless connection to ${deviceIp}:${devicePort}`,
+      "INFO",
+    );
 
     try {
       await invoke("connect_wireless_device", {
@@ -290,11 +305,12 @@ function App() {
       setWirelessConnected(true);
       addLog(
         `Successfully connected to wireless device at ${deviceIp}:${devicePort}`,
+        "SUCCESS",
       );
       // Refresh device list to show the wireless device
       listDevices();
     } catch (error) {
-      addLog(`Failed to connect to wireless device: ${error}`);
+      addLog(`Failed to connect to wireless device: ${error}`, "ERROR");
       setWirelessConnected(false);
     } finally {
       setWirelessConnecting(false);
@@ -305,10 +321,13 @@ function App() {
     try {
       const deps: Dependencies = await invoke("check_dependencies");
       setDependencies(deps);
-      addLog(`Dependencies checked: ADB=${deps.adb}, Scrcpy=${deps.scrcpy}`);
+      addLog(
+        `Dependencies checked: ADB=${deps.adb}, Scrcpy=${deps.scrcpy}`,
+        "INFO",
+      );
     } catch (e) {
       console.error("Failed to check dependencies:", e);
-      addLog(`Failed to check dependencies: ${e}`);
+      addLog(`Failed to check dependencies: ${e}`, "ERROR");
     }
   }
 
@@ -319,10 +338,10 @@ function App() {
       if (devs.length > 0 && !selectedDevice) {
         setSelectedDevice(devs[0].serial);
       }
-      addLog(`Devices listed: ${devs.length} found`);
+      addLog(`Devices listed: ${devs.length} found`, "INFO");
     } catch (e) {
       console.error("Failed to list devices:", e);
-      addLog(`Failed to list devices: ${e}`);
+      addLog(`Failed to list devices: ${e}`, "ERROR");
     }
   }
 
@@ -341,16 +360,17 @@ function App() {
         showTouches,
         record: recordingEnabled,
         recordFile: recordingEnabled ? recordFile : undefined,
-        audio_forwarding: audioForwarding,
-        audio_bitrate: audioForwarding ? audioBitrate : undefined,
-        microphone_forwarding: microphoneForwarding,
+        audioForwarding: audioForwarding,
+        audioBitrate: audioForwarding ? audioBitrate : undefined,
+        microphoneForwarding: microphoneForwarding,
       });
       addLog(
         `Scrcpy started successfully${recordingEnabled ? " (recording enabled)" : ""}`,
+        "SUCCESS",
       );
     } catch (e) {
       console.error("Failed to start scrcpy:", e);
-      addLog(`Failed to start scrcpy: ${e}`);
+      addLog(`Failed to start scrcpy: ${e}`, "ERROR");
     } finally {
       setLoading(false);
     }
@@ -408,6 +428,72 @@ function App() {
                   </select>
                 </div>
               </div>
+            </section>
+
+            <section className="section">
+              <h2>
+                <WifiIcon className="section-icon" />
+                Wireless Connection
+              </h2>
+              <div className="row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={wirelessMode}
+                    onChange={(e) => setWirelessMode(e.target.checked)}
+                  />
+                  Enable Wireless Mode
+                </label>
+              </div>
+              {wirelessMode && (
+                <>
+                  <div className="row">
+                    <label className="input-label">
+                      Device IP Address:
+                      <input
+                        type="text"
+                        placeholder="192.168.1.100"
+                        value={deviceIp}
+                        onChange={(e) => setDeviceIp(e.target.value)}
+                        className="input"
+                      />
+                    </label>
+                    <label className="input-label">
+                      Port:
+                      <input
+                        type="number"
+                        min="1024"
+                        max="65535"
+                        value={devicePort}
+                        onChange={(e) => setDevicePort(Number(e.target.value))}
+                        className="input"
+                        style={{ width: "120px" }}
+                      />
+                    </label>
+                  </div>
+                  <div className="row">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={setupWirelessConnection}
+                      disabled={wirelessConnecting}
+                    >
+                      {wirelessConnecting
+                        ? "Connecting..."
+                        : "Connect Wireless"}
+                    </button>
+                    <div className="connection-status">
+                      <span
+                        className={`status-indicator ${wirelessConnected ? "connected" : "disconnected"}`}
+                      >
+                        {wirelessConnected ? "●" : "○"}
+                      </span>
+                      <span className="status-text">
+                        {wirelessConnected ? "Connected" : "Disconnected"}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </section>
 
             <section className="section">
@@ -505,72 +591,6 @@ function App() {
                   Microphone Forwarding
                 </label>
               </div>
-            </section>
-
-            <section className="section">
-              <h2>
-                <WifiIcon className="section-icon" />
-                Wireless Connection
-              </h2>
-              <div className="row">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={wirelessMode}
-                    onChange={(e) => setWirelessMode(e.target.checked)}
-                  />
-                  Enable Wireless Mode
-                </label>
-              </div>
-              {wirelessMode && (
-                <>
-                  <div className="row">
-                    <label className="input-label">
-                      Device IP Address:
-                      <input
-                        type="text"
-                        placeholder="192.168.1.100"
-                        value={deviceIp}
-                        onChange={(e) => setDeviceIp(e.target.value)}
-                        className="input"
-                      />
-                    </label>
-                    <label className="input-label">
-                      Port:
-                      <input
-                        type="number"
-                        min="1024"
-                        max="65535"
-                        value={devicePort}
-                        onChange={(e) => setDevicePort(Number(e.target.value))}
-                        className="input"
-                        style={{ width: "120px" }}
-                      />
-                    </label>
-                  </div>
-                  <div className="row">
-                    <button
-                      className="btn btn-secondary"
-                      onClick={setupWirelessConnection}
-                      disabled={wirelessConnecting}
-                    >
-                      {wirelessConnecting
-                        ? "Connecting..."
-                        : "Connect Wireless"}
-                    </button>
-                    <div className="connection-status">
-                      <span
-                        className={`status-indicator ${wirelessConnected ? "connected" : "disconnected"}`}
-                      >
-                        {wirelessConnected ? "●" : "○"}
-                      </span>
-                      <span className="status-text">
-                        {wirelessConnected ? "Connected" : "Disconnected"}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
             </section>
 
             <section className="section">
@@ -760,8 +780,15 @@ function App() {
             <section className="section">
               <div className="logs-container">
                 {logs.map((log, index) => (
-                  <div key={index} className="log-entry">
-                    {log}
+                  <div
+                    key={index}
+                    className={`log-entry log-${log.level.toLowerCase()}`}
+                  >
+                    <span className="log-timestamp">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </span>
+                    <span className="log-level">{log.level}</span>
+                    <span className="log-message">{log.message}</span>
                   </div>
                 ))}
               </div>
