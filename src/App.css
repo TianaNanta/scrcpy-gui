@@ -57,7 +57,7 @@ body {
 }
 
 h1 {
-    font-size: 2.5rem;
+    font-size: calc(var(--font-size) * 2.5);
     font-weight: 700;
     margin: 0;
     background: linear-gradient(
@@ -139,7 +139,7 @@ select.select,
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif !important;
-    font-size: 1rem !important;
+    font-size: var(--font-size) !important;
     background: var(--input-bg, white) !important;
     color: var(--text-primary) !important;
     transition: var(--transition) !important;
@@ -190,7 +190,7 @@ select.select option {
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
-    font-size: 1rem;
+    font-size: var(--font-size);
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
@@ -255,14 +255,14 @@ select.select option {
 .input-label label {
     font-weight: 500;
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: calc(var(--font-size) * 0.875);
 }
 
 .input {
     padding: 0.75rem;
     border: 2px solid var(--border-color, #e5e7eb);
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: var(--font-size);
     transition: var(--transition);
     background: var(--input-bg, white);
     color: var(--text-primary);
@@ -339,14 +339,14 @@ select.select option {
 }
 
 .sidebar-header h2 {
-    font-size: 1rem;
+    font-size: var(--font-size);
     font-weight: 600;
     margin: 0;
     color: var(--text-primary);
 }
 
 .sidebar-version {
-    font-size: 0.75rem;
+    font-size: calc(var(--font-size) * 0.75);
     color: var(--text-secondary);
     font-weight: 400;
 }
@@ -368,7 +368,7 @@ select.select option {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 1rem;
+    font-size: var(--font-size);
 }
 
 .sidebar-tab:hover {
@@ -431,7 +431,7 @@ select.select option {
     border-radius: var(--border-radius);
     padding: 1rem;
     font-family: "Share Tech", "Monaco", "Menlo", "Ubuntu Mono", monospace;
-    font-size: 0.875rem;
+    font-size: calc(var(--font-size) * 0.875);
     line-height: 1.5;
 }
 
@@ -455,7 +455,7 @@ select.select option {
     }
 
     h1 {
-        font-size: 2rem;
+        font-size: calc(var(--font-size) * 2);
     }
 
     .section {
@@ -485,7 +485,7 @@ select.select option {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    font-size: 0.75rem;
+    font-size: calc(var(--font-size) * 0.75);
 }
 
 .dependency-item {
@@ -567,7 +567,7 @@ select.select option {
 }
 
 .dependency-desc {
-    font-size: 0.875rem;
+    font-size: calc(var(--font-size) * 0.875);
     color: var(--text-secondary);
 }
 
