@@ -33,7 +33,43 @@ interface Preset {
   showTouches: boolean;
 }
 
+interface ColorScheme {
+  name: string;
+  primary: string;
+  primaryHover: string;
+}
+
 type Tab = "devices" | "presets" | "logs" | "settings";
+type Theme = "light" | "dark" | "system";
+type FontSize = "small" | "medium" | "large";
+
+const colorSchemes: ColorScheme[] = [
+  {
+    name: "Blue",
+    primary: "#3b82f6",
+    primaryHover: "#2563eb",
+  },
+  {
+    name: "Green",
+    primary: "#10b981",
+    primaryHover: "#059669",
+  },
+  {
+    name: "Purple",
+    primary: "#8b5cf6",
+    primaryHover: "#7c3aed",
+  },
+  {
+    name: "Red",
+    primary: "#ef4444",
+    primaryHover: "#dc2626",
+  },
+  {
+    name: "Orange",
+    primary: "#f97316",
+    primaryHover: "#ea580c",
+  },
+];
 
 function App() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -49,6 +85,11 @@ function App() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
   const [currentTab, setCurrentTab] = useState<Tab>("devices");
+
+  // Settings state
+  const [theme, setTheme] = useState<Theme>("system");
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(colorSchemes[0]);
+  const [fontSize, setFontSize] = useState<FontSize>("medium");
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
@@ -68,7 +109,61 @@ function App() {
     checkDependencies();
     listDevices();
     loadPresets();
+    loadSettings();
   }, []);
+
+  const loadSettings = () => {
+    const savedTheme =
+      (localStorage.getItem("scrcpy-theme") as Theme) || "system";
+    const savedColorSchemeName =
+      localStorage.getItem("scrcpy-colorScheme") || "Blue";
+    const savedFontSize =
+      (localStorage.getItem("scrcpy-fontSize") as FontSize) || "medium";
+
+    const savedColorScheme =
+      colorSchemes.find((s) => s.name === savedColorSchemeName) ||
+      colorSchemes[0];
+
+    setTheme(savedTheme);
+    setColorScheme(savedColorScheme);
+    setFontSize(savedFontSize);
+
+    applySettings(savedTheme, savedColorScheme, savedFontSize);
+  };
+
+  const applySettings = (
+    newTheme: Theme,
+    newColorScheme: ColorScheme,
+    newFontSize: FontSize,
+  ) => {
+    const root = document.documentElement;
+
+    // Apply theme
+    const isDark =
+      newTheme === "dark" ||
+      (newTheme === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    root.classList.toggle("dark-theme", isDark);
+
+    // Apply color scheme (only primary colors)
+    root.style.setProperty("--primary-color", newColorScheme.primary);
+    root.style.setProperty("--primary-hover", newColorScheme.primaryHover);
+
+    // Apply font size
+    const fontSizes = { small: "14px", medium: "16px", large: "18px" };
+    root.style.setProperty("--font-size", fontSizes[newFontSize]);
+  };
+
+  const saveSettings = (
+    newTheme: Theme,
+    newColorScheme: ColorScheme,
+    newFontSize: FontSize,
+  ) => {
+    localStorage.setItem("scrcpy-theme", newTheme);
+    localStorage.setItem("scrcpy-colorScheme", newColorScheme.name);
+    localStorage.setItem("scrcpy-fontSize", newFontSize);
+    applySettings(newTheme, newColorScheme, newFontSize);
+  };
 
   const loadPresets = () => {
     const saved = localStorage.getItem("scrcpy-presets");
@@ -359,9 +454,124 @@ function App() {
               <AdjustmentsHorizontalIcon className="header-icon" />
               <h1>Settings</h1>
             </header>
+
             <section className="section">
-              <h2>App Settings</h2>
-              <p>Settings will be implemented here.</p>
+              <h2>Theme</h2>
+              <div className="row">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value="light"
+                    checked={theme === "light"}
+                    onChange={(e) => {
+                      const newTheme = e.target.value as Theme;
+                      setTheme(newTheme);
+                      saveSettings(newTheme, colorScheme, fontSize);
+                    }}
+                  />
+                  Light
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value="dark"
+                    checked={theme === "dark"}
+                    onChange={(e) => {
+                      const newTheme = e.target.value as Theme;
+                      setTheme(newTheme);
+                      saveSettings(newTheme, colorScheme, fontSize);
+                    }}
+                  />
+                  Dark
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value="system"
+                    checked={theme === "system"}
+                    onChange={(e) => {
+                      const newTheme = e.target.value as Theme;
+                      setTheme(newTheme);
+                      saveSettings(newTheme, colorScheme, fontSize);
+                    }}
+                  />
+                  System
+                </label>
+              </div>
+            </section>
+
+            <section className="section">
+              <h2>Color Scheme</h2>
+              <div className="color-schemes">
+                {colorSchemes.map((scheme) => (
+                  <button
+                    key={scheme.name}
+                    className={`color-scheme-btn ${colorScheme.name === scheme.name ? "active" : ""}`}
+                    onClick={() => {
+                      setColorScheme(scheme);
+                      saveSettings(theme, scheme, fontSize);
+                    }}
+                    title={scheme.name}
+                  >
+                    <div
+                      className="color-swatch"
+                      style={{ backgroundColor: scheme.primary }}
+                    ></div>
+                    <span className="color-name">{scheme.name}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2>Font Size</h2>
+              <div className="row">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="fontSize"
+                    value="small"
+                    checked={fontSize === "small"}
+                    onChange={(e) => {
+                      const newFontSize = e.target.value as FontSize;
+                      setFontSize(newFontSize);
+                      saveSettings(theme, colorScheme, newFontSize);
+                    }}
+                  />
+                  Small
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="fontSize"
+                    value="medium"
+                    checked={fontSize === "medium"}
+                    onChange={(e) => {
+                      const newFontSize = e.target.value as FontSize;
+                      setFontSize(newFontSize);
+                      saveSettings(theme, colorScheme, newFontSize);
+                    }}
+                  />
+                  Medium
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="fontSize"
+                    value="large"
+                    checked={fontSize === "large"}
+                    onChange={(e) => {
+                      const newFontSize = e.target.value as FontSize;
+                      setFontSize(newFontSize);
+                      saveSettings(theme, colorScheme, newFontSize);
+                    }}
+                  />
+                  Large
+                </label>
+              </div>
             </section>
           </div>
         );
