@@ -11,6 +11,8 @@ import {
   AdjustmentsHorizontalIcon,
   VideoCameraIcon,
   MusicalNoteIcon,
+  CheckCircleIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import "./App.css";
 
@@ -469,6 +471,51 @@ function App() {
             </section>
 
             <section className="section">
+              <h2>Dependencies</h2>
+              <div className="dependency-status-large">
+                <div className="dependency-item-large">
+                  <span className="dependency-icon">
+                    {dependencies?.adb ? (
+                      <CheckCircleIcon className="status-icon ready" />
+                    ) : (
+                      <XCircleIcon className="status-icon not-ready" />
+                    )}
+                  </span>
+                  <div className="dependency-info">
+                    <span className="dependency-name">ADB</span>
+                    <span className="dependency-desc">
+                      Android Debug Bridge
+                    </span>
+                  </div>
+                </div>
+                <div className="dependency-item-large">
+                  <span className="dependency-icon">
+                    {dependencies?.scrcpy ? (
+                      <CheckCircleIcon className="status-icon ready" />
+                    ) : (
+                      <XCircleIcon className="status-icon not-ready" />
+                    )}
+                  </span>
+                  <div className="dependency-info">
+                    <span className="dependency-name">Scrcpy</span>
+                    <span className="dependency-desc">
+                      Screen mirroring tool
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="actions">
+                <button
+                  className="btn btn-secondary"
+                  onClick={checkDependencies}
+                >
+                  <ArrowPathIcon className="btn-icon" />
+                  Check Dependencies
+                </button>
+              </div>
+            </section>
+
+            <section className="section">
               <h2>
                 <Cog6ToothIcon className="section-icon" />
                 Options
@@ -746,6 +793,33 @@ function App() {
             );
           })}
         </nav>
+        <div className="sidebar-footer">
+          <div className="dependency-status">
+            <div className="dependency-item">
+              <span className="dependency-label">ADB:</span>
+              <span
+                className={`dependency-status ${dependencies?.adb ? "ready" : "not-ready"}`}
+              >
+                {dependencies?.adb ? "✓" : "✗"}
+              </span>
+            </div>
+            <div className="dependency-item">
+              <span className="dependency-label">Scrcpy:</span>
+              <span
+                className={`dependency-status ${dependencies?.scrcpy ? "ready" : "not-ready"}`}
+              >
+                {dependencies?.scrcpy ? "✓" : "✗"}
+              </span>
+            </div>
+          </div>
+          <button
+            className="btn btn-secondary refresh-btn"
+            onClick={checkDependencies}
+            title="Refresh dependency status"
+          >
+            <ArrowPathIcon className="btn-icon" />
+          </button>
+        </div>
       </aside>
       <main className="main-content">{renderContent()}</main>
     </div>
