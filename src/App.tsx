@@ -11,6 +11,7 @@ import {
   WifiIcon,
   ComputerDesktopIcon,
   TrashIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import "./App.css";
 
@@ -194,6 +195,9 @@ function App() {
   // Active mirroring devices
   const [activeDevices, setActiveDevices] = useState<string[]>([]);
 
+  // Device settings modal expanded panels
+  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set());
+
   // Pair new device modal states
   const [showPairModal, setShowPairModal] = useState(false);
   const [pairMode, setPairMode] = useState<"usb" | "wireless" | null>(null);
@@ -201,6 +205,16 @@ function App() {
 
   const hasMissingDeps =
     dependencies && (!dependencies.adb || !dependencies.scrcpy);
+
+  const togglePanel = (panel: string) => {
+    const newExpanded = new Set(expandedPanels);
+    if (newExpanded.has(panel)) {
+      newExpanded.delete(panel);
+    } else {
+      newExpanded.add(panel);
+    }
+    setExpandedPanels(newExpanded);
+  };
 
   const selectSaveFile = async () => {
     try {
@@ -384,48 +398,6 @@ function App() {
     setAlwaysOnTop(settings.alwaysOnTop);
     setWindowBorderless(settings.windowBorderless);
     setFullscreen(settings.fullscreen);
-  };
-
-  const saveDeviceSettings = (serial: string) => {
-    const settings: DeviceSettings = {
-      name: deviceNames.get(serial) || "",
-      bitrate,
-      maxSize,
-      noControl,
-      turnScreenOff,
-      stayAwake,
-      showTouches,
-      recordingEnabled,
-      recordFile,
-      recordFormat,
-      audioForwarding,
-      audioBitrate,
-      microphoneForwarding,
-      displayId,
-      rotation,
-      crop,
-      lockVideoOrientation,
-      displayBuffer,
-      windowX,
-      windowY,
-      windowWidth,
-      windowHeight,
-      alwaysOnTop,
-      windowBorderless,
-      fullscreen,
-    };
-    const newSettings = new Map(deviceSettings);
-    newSettings.set(serial, settings);
-    setDeviceSettings(newSettings);
-    localStorage.setItem(
-      "deviceSettings",
-      JSON.stringify(Array.from(newSettings)),
-    );
-    // Also save deviceNames
-    localStorage.setItem(
-      "deviceNames",
-      JSON.stringify(Array.from(deviceNames)),
-    );
   };
 
   const loadPresets = () => {
@@ -1036,385 +1008,665 @@ function App() {
               </div>
             )}
 
-            {showDeviceModal && selectedDeviceForSettings && (
-              <div
-                className="modal-overlay"
-                onClick={() => setShowDeviceModal(false)}
-              >
-                <div
-                  className="modal-content"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="modal-header">
-                    <h3>Device Settings for {selectedDeviceForSettings}</h3>
-                    <button
-                      className="modal-close"
-                      onClick={() => setShowDeviceModal(false)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="modal-body">
-                    <section className="section">
-                      <h2>Device Name</h2>
-                      <div className="row">
-                        <label className="input-label">
-                          Name:
-                          <input
-                            type="text"
-                            value={
-                              deviceNames.get(selectedDeviceForSettings) || ""
-                            }
-                            onChange={(e) => {
-                              const newNames = new Map(deviceNames);
-                              newNames.set(
-                                selectedDeviceForSettings,
-                                e.target.value,
-                              );
-                              setDeviceNames(newNames);
-                            }}
-                            placeholder="Enter device name..."
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                    </section>
-                    <section className="section">
-                      <h2>General</h2>
-                      <div className="row">
-                        <label className="input-label">
-                          Bitrate (bps):
-                          <input
-                            type="number"
-                            value={bitrate}
-                            onChange={(e) => setBitrate(Number(e.target.value))}
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="input-label">
-                          Max Size:
-                          <input
-                            type="number"
-                            value={maxSize}
-                            onChange={(e) => setMaxSize(Number(e.target.value))}
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={noControl}
-                            onChange={(e) => setNoControl(e.target.checked)}
-                          />
-                          No Control
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={turnScreenOff}
-                            onChange={(e) => setTurnScreenOff(e.target.checked)}
-                          />
-                          Turn Screen Off
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={stayAwake}
-                            onChange={(e) => setStayAwake(e.target.checked)}
-                          />
-                          Stay Awake
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={showTouches}
-                            onChange={(e) => setShowTouches(e.target.checked)}
-                          />
-                          Show Touches
-                        </label>
-                      </div>
-                    </section>
-                    <section className="section">
-                      <h2>Recording</h2>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={recordingEnabled}
-                            onChange={(e) =>
-                              setRecordingEnabled(e.target.checked)
-                            }
-                          />
-                          Enable Recording
-                        </label>
-                      </div>
-                      {recordingEnabled && (
-                        <>
-                          <div className="row">
-                            <label className="input-label">
-                              File Path:
-                              <input
-                                type="text"
-                                value={recordFile}
-                                onChange={(e) => setRecordFile(e.target.value)}
-                                className="input"
-                              />
-                            </label>
-                            <button
-                              className="btn btn-secondary"
-                              onClick={selectSaveFile}
-                            >
-                              Browse
-                            </button>
-                          </div>
-                          <div className="row">
-                            <label className="input-label">
-                              Format:
-                              <select
-                                value={recordFormat}
-                                onChange={(e) =>
-                                  setRecordFormat(
-                                    e.target.value as "mp4" | "mkv",
-                                  )
-                                }
-                                className="select"
-                              >
-                                <option value="mp4">MP4</option>
-                                <option value="mkv">MKV</option>
-                              </select>
-                            </label>
-                          </div>
-                        </>
-                      )}
-                    </section>
-                    <section className="section">
-                      <h2>Audio</h2>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={audioForwarding}
-                            onChange={(e) =>
-                              setAudioForwarding(e.target.checked)
-                            }
-                          />
-                          Audio Forwarding
-                        </label>
-                      </div>
-                      {audioForwarding && (
-                        <div className="row">
-                          <label className="input-label">
-                            Audio Bitrate (kbps):
-                            <input
-                              type="number"
-                              value={audioBitrate / 1000}
-                              onChange={(e) =>
-                                setAudioBitrate(Number(e.target.value) * 1000)
-                              }
-                              className="input"
-                            />
-                          </label>
-                        </div>
-                      )}
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={microphoneForwarding}
-                            onChange={(e) =>
-                              setMicrophoneForwarding(e.target.checked)
-                            }
-                          />
-                          Microphone Forwarding
-                        </label>
-                      </div>
-                    </section>
-                    <section className="section">
-                      <h2>Display</h2>
-                      <div className="row">
-                        <label className="input-label">
-                          Display ID:
-                          <input
-                            type="number"
-                            value={displayId}
-                            onChange={(e) =>
-                              setDisplayId(Number(e.target.value))
-                            }
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="input-label">
-                          Orientation:
-                          <select
-                            value={rotation.toString()}
-                            onChange={(e) =>
-                              setRotation(Number(e.target.value))
-                            }
-                            className="select"
-                          >
-                            <option value="0">0°</option>
-                            <option value="90">90°</option>
-                            <option value="180">180°</option>
-                            <option value="270">270°</option>
-                          </select>
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="input-label">
-                          Crop (width:height:x:y):
-                          <input
-                            type="text"
-                            value={crop}
-                            onChange={(e) => setCrop(e.target.value)}
-                            className="input"
-                            placeholder="e.g. 1920:1080:0:0"
-                          />
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="input-label">
-                          Lock Video Orientation:
-                          <select
-                            value={lockVideoOrientation.toString()}
-                            onChange={(e) =>
-                              setLockVideoOrientation(Number(e.target.value))
-                            }
-                            className="select"
-                          >
-                            <option value="-1">Unlocked</option>
-                            <option value="0">0°</option>
-                            <option value="1">90°</option>
-                            <option value="2">180°</option>
-                            <option value="3">270°</option>
-                          </select>
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="input-label">
-                          Display Buffer (ms):
-                          <input
-                            type="number"
-                            value={displayBuffer}
-                            onChange={(e) =>
-                              setDisplayBuffer(Number(e.target.value))
-                            }
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                    </section>
-                    <section className="section">
-                      <h2>Window</h2>
-                      <div className="row">
-                        <label className="input-label">
-                          Window X:
-                          <input
-                            type="number"
-                            value={windowX}
-                            onChange={(e) => setWindowX(Number(e.target.value))}
-                            className="input"
-                          />
-                        </label>
-                        <label className="input-label">
-                          Window Y:
-                          <input
-                            type="number"
-                            value={windowY}
-                            onChange={(e) => setWindowY(Number(e.target.value))}
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="input-label">
-                          Window Width:
-                          <input
-                            type="number"
-                            value={windowWidth}
-                            onChange={(e) =>
-                              setWindowWidth(Number(e.target.value))
-                            }
-                            className="input"
-                          />
-                        </label>
-                        <label className="input-label">
-                          Window Height:
-                          <input
-                            type="number"
-                            value={windowHeight}
-                            onChange={(e) =>
-                              setWindowHeight(Number(e.target.value))
-                            }
-                            className="input"
-                          />
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={alwaysOnTop}
-                            onChange={(e) => setAlwaysOnTop(e.target.checked)}
-                          />
-                          Always on Top
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={windowBorderless}
-                            onChange={(e) =>
-                              setWindowBorderless(e.target.checked)
-                            }
-                          />
-                          Borderless
-                        </label>
-                      </div>
-                      <div className="row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={fullscreen}
-                            onChange={(e) => setFullscreen(e.target.checked)}
-                          />
-                          Fullscreen
-                        </label>
-                      </div>
-                    </section>
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setShowDeviceModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {
-                        saveDeviceSettings(selectedDeviceForSettings);
-                        setShowDeviceModal(false);
+            {showDeviceModal &&
+              selectedDeviceForSettings &&
+              (() => {
+                const device = devices.find(
+                  (d) => d.serial === selectedDeviceForSettings,
+                );
+
+                const generatedCommand = (() => {
+                  let cmd = `scrcpy --serial ${selectedDeviceForSettings}`;
+                  if (bitrate > 0) cmd += ` -b ${bitrate}`;
+                  if (maxSize > 0) cmd += ` --max-size ${maxSize}`;
+                  if (noControl) cmd += ` --no-control`;
+                  if (turnScreenOff) cmd += ` --turn-screen-off`;
+                  if (stayAwake) cmd += ` --stay-awake`;
+                  if (showTouches) cmd += ` --show-touches`;
+                  if (recordingEnabled && recordFile)
+                    cmd += ` --record "${recordFile}"`;
+                  if (audioForwarding && audioBitrate > 0)
+                    cmd += ` --audio-bitrate ${audioBitrate}`;
+                  if (microphoneForwarding) cmd += ` --microphone`;
+                  if (displayId > 0) cmd += ` --display-id ${displayId}`;
+                  if (rotation > 0) cmd += ` --orientation ${rotation}`;
+                  if (crop) cmd += ` --crop ${crop}`;
+                  if (lockVideoOrientation >= 0)
+                    cmd += ` --lock-video-orientation ${lockVideoOrientation}`;
+                  if (displayBuffer > 0)
+                    cmd += ` --display-buffer ${displayBuffer}`;
+                  if (windowX > 0) cmd += ` --window-x ${windowX}`;
+                  if (windowY > 0) cmd += ` --window-y ${windowY}`;
+                  if (windowWidth > 0) cmd += ` --window-width ${windowWidth}`;
+                  if (windowHeight > 0)
+                    cmd += ` --window-height ${windowHeight}`;
+                  if (alwaysOnTop) cmd += ` --always-on-top`;
+                  if (windowBorderless) cmd += ` --window-borderless`;
+                  if (fullscreen) cmd += ` --fullscreen`;
+                  return cmd;
+                })();
+
+                return (
+                  <div
+                    className="modal-overlay"
+                    onClick={() => setShowDeviceModal(false)}
+                  >
+                    <div
+                      className="modal-content"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        backgroundColor: "#0f0f14",
+                        color: "white",
+                        maxWidth: "800px",
+                        width: "90%",
                       }}
                     >
-                      Save
-                    </button>
+                      <div
+                        className="modal-header"
+                        style={{
+                          backgroundColor: "#0f0f14",
+                          color: "white",
+                          padding: "1.5rem",
+                          borderBottom: "1px solid #333",
+                        }}
+                      >
+                        <div>
+                          <h3
+                            style={{
+                              margin: 0,
+                              fontSize: "1.5rem",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {deviceNames.get(selectedDeviceForSettings) ||
+                              device?.model ||
+                              selectedDeviceForSettings}
+                          </h3>
+                          <p
+                            style={{
+                              margin: "0.5rem 0",
+                              color: "#b0b0b0",
+                              fontSize: "0.9rem",
+                            }}
+                          >
+                            {device?.is_wireless
+                              ? selectedDeviceForSettings
+                              : "USB"}{" "}
+                            • Android {device?.android_version || "Unknown"}
+                          </p>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "1rem",
+                            alignItems: "center",
+                          }}
+                        >
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() =>
+                              navigator.clipboard.writeText(generatedCommand)
+                            }
+                            style={{
+                              backgroundColor: "#333",
+                              color: "white",
+                              border: "1px solid #555",
+                            }}
+                          >
+                            Copy Command
+                          </button>
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                              const settings: DeviceSettings = {
+                                name:
+                                  deviceNames.get(selectedDeviceForSettings) ||
+                                  "",
+                                bitrate,
+                                maxSize,
+                                noControl,
+                                turnScreenOff,
+                                stayAwake,
+                                showTouches,
+                                recordingEnabled,
+                                recordFile,
+                                recordFormat,
+                                audioForwarding,
+                                audioBitrate,
+                                microphoneForwarding,
+                                displayId,
+                                rotation,
+                                crop,
+                                lockVideoOrientation,
+                                displayBuffer,
+                                windowX,
+                                windowY,
+                                windowWidth,
+                                windowHeight,
+                                alwaysOnTop,
+                                windowBorderless,
+                                fullscreen,
+                              };
+                              const newSettings = new Map(deviceSettings);
+                              newSettings.set(
+                                selectedDeviceForSettings,
+                                settings,
+                              );
+                              setDeviceSettings(newSettings);
+                              localStorage.setItem(
+                                "deviceSettings",
+                                JSON.stringify(Array.from(newSettings)),
+                              );
+                              localStorage.setItem(
+                                "deviceNames",
+                                JSON.stringify(Array.from(deviceNames)),
+                              );
+                              startScrcpy(selectedDeviceForSettings);
+                              setShowDeviceModal(false);
+                            }}
+                            style={{
+                              backgroundColor: "#007bff",
+                              color: "white",
+                            }}
+                          >
+                            Launch Mirroring
+                          </button>
+                          <button
+                            className="modal-close"
+                            onClick={() => setShowDeviceModal(false)}
+                            style={{
+                              color: "white",
+                              background: "none",
+                              border: "none",
+                              fontSize: "1.5rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        className="modal-body"
+                        style={{
+                          backgroundColor: "#0f0f14",
+                          color: "white",
+                          padding: "1.5rem",
+                        }}
+                      >
+                        <div
+                          className="settings-panel"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <div
+                            className="panel-header"
+                            onClick={() => togglePanel("display")}
+                            style={{
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "1rem 0",
+                              borderBottom: "1px solid #333",
+                            }}
+                          >
+                            <h4 style={{ margin: 0, fontSize: "1.1rem" }}>
+                              Display & Quality
+                            </h4>
+                            <ChevronDownIcon
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                transform: expandedPanels.has("display")
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }}
+                            />
+                          </div>
+                          {expandedPanels.has("display") && (
+                            <div
+                              className="panel-content"
+                              style={{ padding: "1rem 0" }}
+                            >
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Resolution Limit:
+                                  <select
+                                    value={maxSize}
+                                    onChange={(e) =>
+                                      setMaxSize(Number(e.target.value))
+                                    }
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <option value="0">Unlimited</option>
+                                    <option value="720">720p</option>
+                                    <option value="1080">1080p</option>
+                                    <option value="1440">1440p</option>
+                                  </select>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Bitrate (bps):
+                                  <input
+                                    type="number"
+                                    value={bitrate}
+                                    onChange={(e) =>
+                                      setBitrate(Number(e.target.value))
+                                    }
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Orientation:
+                                  <select
+                                    value={rotation.toString()}
+                                    onChange={(e) =>
+                                      setRotation(Number(e.target.value))
+                                    }
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <option value="0">0°</option>
+                                    <option value="90">90°</option>
+                                    <option value="180">180°</option>
+                                    <option value="270">270°</option>
+                                  </select>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Lock Video Orientation:
+                                  <select
+                                    value={lockVideoOrientation.toString()}
+                                    onChange={(e) =>
+                                      setLockVideoOrientation(
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <option value="-1">Unlocked</option>
+                                    <option value="0">0°</option>
+                                    <option value="1">90°</option>
+                                    <option value="2">180°</option>
+                                    <option value="3">270°</option>
+                                  </select>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="settings-panel"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <div
+                            className="panel-header"
+                            onClick={() => togglePanel("behavior")}
+                            style={{
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "1rem 0",
+                              borderBottom: "1px solid #333",
+                            }}
+                          >
+                            <h4 style={{ margin: 0, fontSize: "1.1rem" }}>
+                              Behavior
+                            </h4>
+                            <ChevronDownIcon
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                transform: expandedPanels.has("behavior")
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }}
+                            />
+                          </div>
+                          {expandedPanels.has("behavior") && (
+                            <div
+                              className="panel-content"
+                              style={{ padding: "1rem 0" }}
+                            >
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={stayAwake}
+                                    onChange={(e) =>
+                                      setStayAwake(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Stay Awake
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={showTouches}
+                                    onChange={(e) =>
+                                      setShowTouches(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Show Touches
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={turnScreenOff}
+                                    onChange={(e) =>
+                                      setTurnScreenOff(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Turn Screen Off
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={noControl}
+                                    onChange={(e) =>
+                                      setNoControl(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Read-only Mode
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="settings-panel"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <div
+                            className="panel-header"
+                            onClick={() => togglePanel("recording")}
+                            style={{
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "1rem 0",
+                              borderBottom: "1px solid #333",
+                            }}
+                          >
+                            <h4 style={{ margin: 0, fontSize: "1.1rem" }}>
+                              Recording
+                            </h4>
+                            <ChevronDownIcon
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                transform: expandedPanels.has("recording")
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }}
+                            />
+                          </div>
+                          {expandedPanels.has("recording") && (
+                            <div
+                              className="panel-content"
+                              style={{ padding: "1rem 0" }}
+                            >
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={recordingEnabled}
+                                    onChange={(e) =>
+                                      setRecordingEnabled(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Enable Recording
+                                </label>
+                              </div>
+                              {recordingEnabled && (
+                                <>
+                                  <div
+                                    className="row"
+                                    style={{ marginBottom: "1rem" }}
+                                  >
+                                    <label
+                                      className="input-label"
+                                      style={{
+                                        color: "white",
+                                        display: "block",
+                                        marginBottom: "0.5rem",
+                                      }}
+                                    >
+                                      Output Filename:
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          gap: "0.5rem",
+                                        }}
+                                      >
+                                        <input
+                                          type="text"
+                                          value={recordFile}
+                                          onChange={(e) =>
+                                            setRecordFile(e.target.value)
+                                          }
+                                          style={{
+                                            backgroundColor: "#1e1e2e",
+                                            color: "white",
+                                            border: "1px solid #333",
+                                            padding: "0.5rem",
+                                            borderRadius: "4px",
+                                            flex: 1,
+                                          }}
+                                        />
+                                        <button
+                                          onClick={selectSaveFile}
+                                          style={{
+                                            backgroundColor: "#333",
+                                            color: "white",
+                                            border: "1px solid #555",
+                                            padding: "0.5rem",
+                                            borderRadius: "4px",
+                                            cursor: "pointer",
+                                          }}
+                                        >
+                                          Browse
+                                        </button>
+                                      </div>
+                                    </label>
+                                  </div>
+                                  <div
+                                    className="row"
+                                    style={{ marginBottom: "1rem" }}
+                                  >
+                                    <label
+                                      className="input-label"
+                                      style={{
+                                        color: "white",
+                                        display: "block",
+                                        marginBottom: "0.5rem",
+                                      }}
+                                    >
+                                      Container format:
+                                      <select
+                                        value={recordFormat}
+                                        onChange={(e) =>
+                                          setRecordFormat(
+                                            e.target.value as "mp4" | "mkv",
+                                          )
+                                        }
+                                        style={{
+                                          backgroundColor: "#1e1e2e",
+                                          color: "white",
+                                          border: "1px solid #333",
+                                          padding: "0.5rem",
+                                          borderRadius: "4px",
+                                          width: "100%",
+                                        }}
+                                      >
+                                        <option value="mp4">MP4</option>
+                                        <option value="mkv">MKV</option>
+                                      </select>
+                                    </label>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="generated-command"
+                          style={{
+                            marginTop: "2rem",
+                            padding: "1rem",
+                            backgroundColor: "#1e1e2e",
+                            borderRadius: "4px",
+                            fontFamily: "monospace",
+                            color: "white",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          <strong>Generated Command:</strong>
+                          <br />
+                          {generatedCommand}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                );
+              })()}
           </div>
         );
       case "presets":
