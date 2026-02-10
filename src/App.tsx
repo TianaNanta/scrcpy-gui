@@ -1364,6 +1364,371 @@ function App() {
                                   </select>
                                 </label>
                               </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Display ID:
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={displayId}
+                                    onChange={(e) =>
+                                      setDisplayId(Number(e.target.value))
+                                    }
+                                    placeholder="0 (default)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Select display for multi-display devices (0
+                                    = main display)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Screen Crop:
+                                  <input
+                                    type="text"
+                                    value={crop}
+                                    onChange={(e) => setCrop(e.target.value)}
+                                    placeholder="width:height:x:y (e.g. 1080:1920:0:0)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Crop format: width:height:x:y (leave empty
+                                    for no crop)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Display Buffer (ms):
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={displayBuffer}
+                                    onChange={(e) =>
+                                      setDisplayBuffer(Number(e.target.value))
+                                    }
+                                    placeholder="0 (disabled)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Add a buffering delay (in milliseconds) to
+                                    reduce jitter (0 = disabled)
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="settings-panel"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <div
+                            className="panel-header"
+                            onClick={() => togglePanel("window")}
+                            style={{
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "1rem 0",
+                              borderBottom: "1px solid #333",
+                            }}
+                          >
+                            <h4 style={{ margin: 0, fontSize: "1.1rem" }}>
+                              Window Management
+                            </h4>
+                            <ChevronDownIcon
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                transform: expandedPanels.has("window")
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }}
+                            />
+                          </div>
+                          {expandedPanels.has("window") && (
+                            <div
+                              className="panel-content"
+                              style={{ padding: "1rem 0" }}
+                            >
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Window Position:
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "0.5rem",
+                                    }}
+                                  >
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={windowX}
+                                      onChange={(e) =>
+                                        setWindowX(Number(e.target.value))
+                                      }
+                                      placeholder="X"
+                                      style={{
+                                        backgroundColor: "#1e1e2e",
+                                        color: "white",
+                                        border: "1px solid #333",
+                                        padding: "0.5rem",
+                                        borderRadius: "4px",
+                                        flex: 1,
+                                      }}
+                                    />
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={windowY}
+                                      onChange={(e) =>
+                                        setWindowY(Number(e.target.value))
+                                      }
+                                      placeholder="Y"
+                                      style={{
+                                        backgroundColor: "#1e1e2e",
+                                        color: "white",
+                                        border: "1px solid #333",
+                                        padding: "0.5rem",
+                                        borderRadius: "4px",
+                                        flex: 1,
+                                      }}
+                                    />
+                                  </div>
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    X and Y coordinates (0 = default position)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Window Size:
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "0.5rem",
+                                    }}
+                                  >
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={windowWidth}
+                                      onChange={(e) =>
+                                        setWindowWidth(Number(e.target.value))
+                                      }
+                                      placeholder="Width"
+                                      style={{
+                                        backgroundColor: "#1e1e2e",
+                                        color: "white",
+                                        border: "1px solid #333",
+                                        padding: "0.5rem",
+                                        borderRadius: "4px",
+                                        flex: 1,
+                                      }}
+                                    />
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={windowHeight}
+                                      onChange={(e) =>
+                                        setWindowHeight(Number(e.target.value))
+                                      }
+                                      placeholder="Height"
+                                      style={{
+                                        backgroundColor: "#1e1e2e",
+                                        color: "white",
+                                        border: "1px solid #333",
+                                        padding: "0.5rem",
+                                        borderRadius: "4px",
+                                        flex: 1,
+                                      }}
+                                    />
+                                  </div>
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Width and Height in pixels (0 = auto)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={alwaysOnTop}
+                                    onChange={(e) =>
+                                      setAlwaysOnTop(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Always on Top
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={windowBorderless}
+                                    onChange={(e) =>
+                                      setWindowBorderless(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Borderless Window
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={fullscreen}
+                                    onChange={(e) =>
+                                      setFullscreen(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Fullscreen Mode
+                                </label>
+                              </div>
                             </div>
                           )}
                         </div>
