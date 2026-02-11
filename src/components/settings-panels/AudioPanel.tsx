@@ -22,17 +22,10 @@ export default function AudioPanel({
 }: AudioPanelProps) {
   return (
     <div className="settings-panel" style={{ marginBottom: "1rem" }}>
-      <div
+      <button
         className="panel-header"
         onClick={onToggle}
-        style={{
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1rem 0",
-          borderBottom: "1px solid #333",
-        }}
+        aria-expanded={expanded}
       >
         <h4 style={{ margin: 0, fontSize: "1.1rem" }}>Audio</h4>
         <ChevronDownIcon
@@ -43,7 +36,7 @@ export default function AudioPanel({
             transition: "transform 0.2s",
           }}
         />
-      </div>
+      </button>
       {expanded && (
         <div className="panel-content" style={{ padding: "1rem 0" }}>
           {!canAudio && (

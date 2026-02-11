@@ -117,3 +117,50 @@ First line, split by whitespace, second token is `X.Y.Z` (patch may be absent: `
 **Rationale**: Context + useReducer is built-in React (constitution requirement), handles ~50 state variables cleanly, and eliminates prop drilling. `useReducer` groups related transitions (e.g., `LOAD_PRESET` sets all fields at once).
 
 **Alternatives considered**: Prop drilling (rejected — 50 props across 20 components is unmaintainable), zustand/jotai (rejected — external dependency, constitution says prefer built-in), single mega-context (rejected — every state change re-renders everything).
+
+---
+
+## R7 — Keyboard Accessibility Patterns (Constitution III-6)
+
+**Decision**: Use native HTML semantics (button, label, role attributes, aria-*) and vanilla React event handlers. No external accessibility library needed.
+
+**Audit summary**: The codebase has zero ARIA attributes, zero keyboard event handlers (except 1 in PresetManager), and no focus management. All gaps are fixable with native HTML + ARIA without new dependencies.
+
+**Pattern decisions**:
+
+| Pattern | Approach | Standard |
+|---------|----------|----------|
+| Accordion panels (11 panels) | Convert `<div onClick>` to `<button aria-expanded>` | WAI-ARIA Accordion |
+| Modal dialogs | `role="dialog"` + `aria-modal` + focus trap + ESC handler + focus restore | WAI-ARIA Dialog |
+| Tab navigation (Sidebar) | `role="tablist/tab/tabpanel"` + `aria-selected` + arrow key navigation | WAI-ARIA Tabs |
+| Device cards | `tabIndex={0}` + `role="button"` + `aria-label` + Enter/Space handler | Interactive card |
+| Icon-only buttons | `aria-label` (close ×, delete, refresh) | WCAG 4.1.2 |
+| Search input | `aria-label="Search devices"` | WCAG 1.3.1 |
+| Disabled + tooltip controls | `aria-describedby` pointing to tooltip reason | WCAG 4.1.2 |
+| Copy feedback | `aria-live="polite"` region for "Copied!" | WCAG 4.1.3 |
+| Log output | `role="log"` + `aria-live="polite"` | WAI-ARIA Log |
+| Focus indicators | `:focus-visible` with `outline: 2px solid var(--color-focus-ring)` (≥3:1 contrast) | WCAG 2.4.7 |
+
+**Focus trap implementation** (~15 lines per modal):
+```typescript
+function trapFocus(e: React.KeyboardEvent, containerRef: React.RefObject<HTMLElement>) {
+  if (e.key !== 'Tab') return;
+  const focusable = containerRef.current?.querySelectorAll<HTMLElement>(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (!focusable?.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+```
+
+**Rationale**: Native HTML elements (`<button>`, `<label>`, `<input>`) provide keyboard accessibility `for free — they're focusable and activatable by Enter/Space without JavaScript. ARIA attributes communicate state to assistive technology. This approach adds zero runtime cost, zero dependencies, and zero bundle size.
+
+**Alternatives considered**: `focus-trap-react` library (rejected — adds a dependency for ~15 lines of code; constitution says prefer standard library), `react-aria` (rejected — massive scope, adds ~40KB gzipped), `@headlessui/react` (rejected — external dependency; only using 2 patterns: dialog + tabs).

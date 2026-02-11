@@ -29,6 +29,25 @@ export default function Sidebar({
   dependencies,
   onRefreshDeps,
 }: SidebarProps) {
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    let nextIndex = index;
+    if (e.key === "ArrowDown") {
+      nextIndex = (index + 1) % tabs.length;
+    } else if (e.key === "ArrowUp") {
+      nextIndex = (index - 1 + tabs.length) % tabs.length;
+    } else if (e.key === "Home") {
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      nextIndex = tabs.length - 1;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    onTabChange(tabs[nextIndex].id);
+    const buttons = (e.currentTarget.parentElement as HTMLElement)?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    buttons?.[nextIndex]?.focus();
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -38,14 +57,18 @@ export default function Sidebar({
           <span className="sidebar-version">v0.3.0</span>
         </div>
       </div>
-      <nav className="sidebar-nav">
-        {tabs.map((tab) => {
+      <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">
+        {tabs.map((tab, index) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               className={`sidebar-tab ${currentTab === tab.id ? "active" : ""}`}
               onClick={() => onTabChange(tab.id)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              role="tab"
+              aria-selected={currentTab === tab.id}
+              tabIndex={currentTab === tab.id ? 0 : -1}
             >
               <Icon className="sidebar-icon" />
               {tab.name}
@@ -76,6 +99,7 @@ export default function Sidebar({
           className="btn btn-secondary refresh-btn"
           onClick={onRefreshDeps}
           title="Refresh dependency status"
+          aria-label="Refresh dependency status"
         >
           <ArrowPathIcon className="btn-icon" />
         </button>

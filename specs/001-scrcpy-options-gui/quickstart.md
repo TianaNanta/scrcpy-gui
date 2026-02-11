@@ -123,3 +123,52 @@ cd src-tauri && cargo build 2>&1 | grep -c warning  # must be 0
 4. Save a preset that includes new options
 5. Reload the app
 6. **Verify**: New preset loads with all fields intact
+
+## Keyboard Accessibility Verification
+
+### Tab Navigation
+
+1. Press `Tab` from the top of the page
+2. **Verify**: Focus moves through sidebar tabs in visual order
+3. **Verify**: Each focused element has a visible focus ring (outline)
+4. Press `Enter` or `Space` on a sidebar tab
+5. **Verify**: Tab content switches
+
+### Sidebar Arrow Keys
+
+1. Focus any sidebar tab
+2. Press `ArrowDown` / `ArrowUp`
+3. **Verify**: Focus moves between tabs; `Home` goes to first, `End` to last
+
+### Device Cards
+
+1. Tab to a device card in the device list
+2. **Verify**: Card receives visible focus ring
+3. Press `Enter`
+4. **Verify**: Device settings modal opens
+
+### Settings Modal
+
+1. Open a device settings modal (via keyboard or click)
+2. **Verify**: Focus moves inside the modal (first interactive element)
+3. Press `Tab` repeatedly until the last element
+4. Press `Tab` again
+5. **Verify**: Focus wraps to the first element (focus trap)
+6. Press `Shift+Tab` from the first element
+7. **Verify**: Focus wraps to the last element
+8. Press `Escape`
+9. **Verify**: Modal closes and focus returns to the element that opened it
+
+### Accordion Panels
+
+1. Inside the settings modal, Tab to a panel header
+2. **Verify**: Panel header is a focusable button with visible focus ring
+3. Press `Enter` or `Space`
+4. **Verify**: Panel expands/collapses
+5. **Verify**: Screen reader announces expanded/collapsed state (`aria-expanded`)
+
+### Disabled Controls
+
+1. Find a disabled control (e.g., camera options on a pre-Android-12 device)
+2. Tab to the disabled control
+3. **Verify**: Control is not interactive but tooltip reason is announced by screen readers

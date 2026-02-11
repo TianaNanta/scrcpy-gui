@@ -1,3 +1,4 @@
+import { useRef, useEffect, useCallback } from "react";
 import type { Device } from "../types/device";
 
 interface PairDeviceModalProps {
@@ -29,12 +30,58 @@ export default function PairDeviceModal({
   onStartMirroringUsb,
   onConnectWireless,
 }: PairDeviceModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+
+  useEffect(() => {
+    triggerRef.current = document.activeElement;
+    const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable?.focus();
+    return () => {
+      (triggerRef.current as HTMLElement)?.focus?.();
+    };
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    },
+    [onClose],
+  );
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pair-modal-title"
+        onKeyDown={handleKeyDown}
+      >
         <div className="modal-header">
-          <h3>Pair New Device</h3>
-          <button className="modal-close" onClick={onClose}>
+          <h3 id="pair-modal-title">Pair New Device</h3>
+          <button className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>

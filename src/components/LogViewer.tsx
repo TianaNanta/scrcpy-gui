@@ -13,7 +13,7 @@ export default function LogViewer({ logs }: LogViewerProps) {
         <h1>Logs</h1>
       </header>
       <section className="section">
-        <div className="logs-container">
+        <div className="logs-container" role="log" aria-live="polite">
           {logs.map((log, index) => (
             <div key={index} className={`log-entry log-${log.level.toLowerCase()}`}>
               <span className="log-timestamp">
