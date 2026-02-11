@@ -45,7 +45,8 @@ describe("useScrcpyProcess", () => {
       // Should call test_device first, then start_scrcpy
       expect(mockInvoke).toHaveBeenCalledWith("test_device", { serial: "DEVICE1" });
       expect(mockInvoke).toHaveBeenCalledWith("start_scrcpy", expect.objectContaining({
-        config: expect.objectContaining({ serial: "DEVICE1" }),
+        serial: "DEVICE1",
+        args: expect.any(Array),
       }));
 
       expect(result.current.activeDevices).toContain("DEVICE1");

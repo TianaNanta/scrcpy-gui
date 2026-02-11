@@ -6,7 +6,6 @@ import {
   saveDeviceNames,
   loadPresets,
   createPreset,
-  buildInvokeConfig,
 } from "./useDeviceSettings";
 import { DEFAULT_DEVICE_SETTINGS } from "../types/settings";
 import type { DeviceSettings } from "../types/settings";
@@ -129,101 +128,35 @@ describe("createPreset", () => {
   });
 });
 
-describe("buildInvokeConfig", () => {
-  it("maps defaults to minimal config", () => {
-    const config = buildInvokeConfig("dev1", settings());
-    expect(config.serial).toBe("dev1");
-    // bitrate 8000000 > 0 → it gets included in config
-    expect(config.bitrate).toBe(8000000);
-    expect(config.noAudio).toBe(false); // audioForwarding=true, noAudio=false
-    expect(config.noVideo).toBe(false);
-    expect(config.otgMode).toBe(false);
+describe("saveDeviceSettings persists to localStorage", () => {
+  it("stores device settings via setItem with expected key", () => {
+    const allSettings = new Map<string, DeviceSettings>();
+    const s = settings({ name: "MyPhone", bitrate: 4000000 });
+    saveDeviceSettings("dev-abc", s, allSettings);
+
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      "deviceSettings",
+      expect.any(String),
+    );
+
+    // Verify the stored data is parseable and contains the device
+    const storedJson = localStorageMock.setItem.mock.calls.find(
+      (c: string[]) => c[0] === "deviceSettings",
+    )?.[1];
+    const parsed: [string, DeviceSettings][] = JSON.parse(storedJson as string);
+    const entry = parsed.find(([key]) => key === "dev-abc");
+    expect(entry).toBeTruthy();
+    expect(entry![1].name).toBe("MyPhone");
+    expect(entry![1].bitrate).toBe(4000000);
   });
 
-  it("sends videoSource only when camera", () => {
-    const config = buildInvokeConfig("dev1", settings({ videoSource: "display" }));
-    expect(config.videoSource).toBeUndefined();
+  it("preserves existing device settings when adding a new one", () => {
+    const existing = settings({ name: "Existing" });
+    const allSettings = new Map<string, DeviceSettings>([["dev-1", existing]]);
+    const newSettings = settings({ name: "New" });
+    const result = saveDeviceSettings("dev-2", newSettings, allSettings);
 
-    const config2 = buildInvokeConfig("dev1", settings({ videoSource: "camera", cameraFacing: "back" }));
-    expect(config2.videoSource).toBe("camera");
-    expect(config2.cameraFacing).toBe("back");
-  });
-
-  it("sets noAudio=true when audioForwarding is false", () => {
-    const config = buildInvokeConfig("dev1", settings({ audioForwarding: false }));
-    expect(config.noAudio).toBe(true);
-  });
-
-  it("sends audio codec only when not opus", () => {
-    const config1 = buildInvokeConfig("dev1", settings({ audioCodec: "opus" }));
-    expect(config1.audioCodec).toBeUndefined();
-
-    const config2 = buildInvokeConfig("dev1", settings({ audioCodec: "aac" }));
-    expect(config2.audioCodec).toBe("aac");
-  });
-
-  it("sends keyboard/mouse/gamepad only when not default/disabled", () => {
-    const config = buildInvokeConfig("dev1", settings());
-    expect(config.keyboardMode).toBeUndefined();
-    expect(config.mouseMode).toBeUndefined();
-    expect(config.gamepadMode).toBeUndefined();
-
-    const config2 = buildInvokeConfig("dev1", settings({
-      keyboardMode: "uhid",
-      mouseMode: "aoa",
-      gamepadMode: "uhid",
-    }));
-    expect(config2.keyboardMode).toBe("uhid");
-    expect(config2.mouseMode).toBe("aoa");
-    expect(config2.gamepadMode).toBe("uhid");
-  });
-
-  it("builds virtualDisplay string with resolution and DPI", () => {
-    const config = buildInvokeConfig("dev1", settings({
-      virtualDisplay: true,
-      virtualDisplayResolution: "1920x1080",
-      virtualDisplayDpi: 320,
-    }));
-    expect(config.virtualDisplay).toBe("1920x1080/320");
-  });
-
-  it("builds virtualDisplay as empty string when no resolution", () => {
-    const config = buildInvokeConfig("dev1", settings({ virtualDisplay: true }));
-    expect(config.virtualDisplay).toBe("");
-  });
-
-  it("does not send virtualDisplay when disabled", () => {
-    const config = buildInvokeConfig("dev1", settings({ virtualDisplay: false }));
-    expect(config.virtualDisplay).toBeUndefined();
-  });
-
-  it("sends recording fields correctly", () => {
-    const config = buildInvokeConfig("dev1", settings({
-      recordingEnabled: true,
-      recordFile: "/tmp/output.mp4",
-    }));
-    expect(config.record).toBe(true);
-    expect(config.recordFile).toBe("/tmp/output.mp4");
-
-    const config2 = buildInvokeConfig("dev1", settings({ recordingEnabled: false }));
-    expect(config2.record).toBe(false);
-    expect(config2.recordFile).toBeUndefined();
-  });
-
-  it("sends v4l2 fields when set", () => {
-    const config = buildInvokeConfig("dev1", settings({
-      v4l2Sink: "/dev/video2",
-      v4l2Buffer: 100,
-    }));
-    expect(config.v4l2Sink).toBe("/dev/video2");
-    expect(config.v4l2Buffer).toBe(100);
-  });
-
-  it("sends lockVideoOrientation when >= 0", () => {
-    const config = buildInvokeConfig("dev1", settings({ lockVideoOrientation: 0 }));
-    expect(config.lockVideoOrientation).toBe(0);
-
-    const config2 = buildInvokeConfig("dev1", settings({ lockVideoOrientation: -1 }));
-    expect(config2.lockVideoOrientation).toBeUndefined();
+    expect(result.get("dev-1")?.name).toBe("Existing");
+    expect(result.get("dev-2")?.name).toBe("New");
   });
 });

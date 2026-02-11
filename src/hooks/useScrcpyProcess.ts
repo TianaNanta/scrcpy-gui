@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { DeviceSettings, LogEntry } from "../types/settings";
-import { buildInvokeConfig } from "./useDeviceSettings";
+import { buildArgs } from "../utils/command-builder";
 
 interface ScrcpyProcessState {
   activeDevices: string[];
@@ -34,8 +34,8 @@ export function useScrcpyProcess(): ScrcpyProcessState {
 
       addLog(`Starting scrcpy for device: ${serial}`);
       try {
-        const config = buildInvokeConfig(serial, settings);
-        await invoke("start_scrcpy", { config });
+        const args = buildArgs(serial, settings);
+        await invoke("start_scrcpy", { serial, args });
         setActiveDevices((prev) => [...prev, serial]);
         addLog(
           `Scrcpy started successfully${settings.recordingEnabled ? " (recording enabled)" : ""}`,

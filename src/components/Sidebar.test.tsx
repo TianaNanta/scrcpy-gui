@@ -24,6 +24,7 @@ describe("Sidebar", () => {
     onTabChange: vi.fn(),
     dependencies: { adb: true, scrcpy: true } as Dependencies,
     onRefreshDeps: vi.fn(),
+    connectedCount: 0,
   };
 
   beforeEach(() => {

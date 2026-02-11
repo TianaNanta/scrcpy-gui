@@ -30,6 +30,7 @@ interface DeviceListProps {
   onDisconnectWireless: (serial: string) => void;
   onOpenDeviceSettings: (serial: string) => void;
   onOpenPairModal: () => void;
+  onForgetDevice: (serial: string) => void;
 }
 
 export default function DeviceList({
@@ -51,6 +52,7 @@ export default function DeviceList({
   onDisconnectWireless,
   onOpenDeviceSettings,
   onOpenPairModal,
+  onForgetDevice,
 }: DeviceListProps) {
   const hasMissingDeps = dependencies && (!dependencies.adb || !dependencies.scrcpy);
 
@@ -154,10 +156,18 @@ export default function DeviceList({
 
           return (
             <div className="devices-list fade-enter">
-              {filteredDevices.map((d) => (
+              {filteredDevices.map((d) => {
+              const isConnected = d.status === "device";
+              const isDisconnected = d.status === "disconnected";
+              const statusLabel = d.status === "device" ? "connected"
+                : d.status === "disconnected" ? "disconnected"
+                : d.status === "unauthorized" ? "unauthorized"
+                : "offline";
+
+              return (
               <div
                 key={d.serial}
-                className={`device-card ${d.status === "device" ? "online" : "offline"}`}
+                className={`device-card ${isConnected ? "online" : "offline"}${isDisconnected ? " disconnected" : ""}`}
                 onDoubleClick={() => onOpenDeviceSettings(d.serial)}
                 tabIndex={0}
                 role="button"
@@ -172,8 +182,8 @@ export default function DeviceList({
                 <div className="device-header">
                   <div className="device-serial">{deviceNames.get(d.serial) || d.serial}</div>
                   <div className="device-status">
-                    <span className={`status-dot ${d.status === "device" ? "online" : "offline"}`} />
-                    {d.status}
+                    <span className={`status-dot ${isConnected ? "online" : "offline"}`} />
+                    {statusLabel}
                     <span className={`connection-badge ${d.is_wireless ? "wireless" : "usb"}`}>
                       {d.is_wireless ? <WifiIcon /> : <ComputerDesktopIcon />}
                       {d.is_wireless ? "Wi-Fi" : "USB"}
@@ -183,26 +193,40 @@ export default function DeviceList({
                 <div className="device-info">
                   {d.model && <div>Model: {d.model}</div>}
                   {d.android_version && <div>Android: {d.android_version}</div>}
-                  {d.battery_level !== undefined && <div>Battery: {d.battery_level}%</div>}
+                  {d.battery_level != null && <div>Battery: {d.battery_level}%</div>}
                 </div>
                 <div className="device-actions">
-                  {d.is_wireless && (
+                  {isDisconnected ? (
                     <button
-                      className="btn btn-icon-only btn-delete"
-                      onClick={() => onDisconnectWireless(d.serial)}
-                      disabled={wirelessConnecting}
-                      title="Delete wireless connection"
-                      aria-label={`Delete wireless connection for ${deviceNames.get(d.serial) || d.serial}`}
+                      className="btn btn-delete-text"
+                      onClick={(e) => { e.stopPropagation(); onForgetDevice(d.serial); }}
+                      title="Remove device from list"
+                      aria-label={`Forget device ${deviceNames.get(d.serial) || d.serial}`}
                     >
                       <TrashIcon className="btn-icon" />
+                      Forget
                     </button>
+                  ) : (
+                    <>
+                      {d.is_wireless && (
+                        <button
+                          className="btn btn-icon-only btn-delete"
+                          onClick={() => onDisconnectWireless(d.serial)}
+                          disabled={wirelessConnecting}
+                          title="Delete wireless connection"
+                          aria-label={`Delete wireless connection for ${deviceNames.get(d.serial) || d.serial}`}
+                        >
+                          <TrashIcon className="btn-icon" />
+                        </button>
+                      )}
+                    </>
                   )}
                   <div className="device-action-main">
                     {activeDevices.includes(d.serial) ? (
                       <button
                         className="btn btn-stop"
                         onClick={() => onStopScrcpy(d.serial)}
-                        disabled={!dependencies?.adb || !dependencies?.scrcpy || d.status !== "device"}
+                        disabled={!dependencies?.adb || !dependencies?.scrcpy || !isConnected}
                       >
                         Stop
                       </button>
@@ -210,7 +234,7 @@ export default function DeviceList({
                       <button
                         className="btn btn-primary"
                         onClick={() => onStartScrcpy(d.serial)}
-                        disabled={loading || !dependencies?.adb || !dependencies?.scrcpy || d.status !== "device"}
+                        disabled={loading || !dependencies?.adb || !dependencies?.scrcpy || !isConnected}
                       >
                         Mirror
                       </button>
@@ -218,7 +242,8 @@ export default function DeviceList({
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           <div
             className="device-card pair-new-device"
             onClick={onOpenPairModal}

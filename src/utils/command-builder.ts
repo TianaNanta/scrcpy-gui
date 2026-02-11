@@ -1,17 +1,18 @@
 import type { DeviceSettings } from "../types/settings";
 
 /**
- * Build a scrcpy command preview string from DeviceSettings.
- * This is the single source of truth for command generation.
- * Returns the full command string including "scrcpy".
+ * Build scrcpy command arguments from DeviceSettings.
+ * This is the SINGLE SOURCE OF TRUTH for command generation — used by both
+ * the preview display and the actual invocation.
+ * Returns a raw argument array (does NOT include "scrcpy" itself).
  */
-export function buildCommandPreview(serial: string, settings: DeviceSettings): string {
-  const args: string[] = ["scrcpy", "-s", serial];
+export function buildArgs(serial: string, settings: DeviceSettings): string[] {
+  const args: string[] = ["-s", serial];
 
   // OTG mode — standalone, no other video/audio flags
   if (settings.otgMode) {
     args.push("--otg");
-    return args.join(" ");
+    return args;
   }
 
   // ─── Video ────────────────────────────────────────────────────────────────
@@ -77,7 +78,7 @@ export function buildCommandPreview(serial: string, settings: DeviceSettings): s
   if (settings.rotation > 0 && settings.videoSource !== "camera") {
     args.push("--orientation", settings.rotation.toString());
   }
-  if (settings.crop && settings.videoSource !== "camera") {
+  if (settings.crop && settings.videoSource !== "camera" && !settings.virtualDisplay) {
     args.push("--crop", settings.crop);
   }
   if (settings.lockVideoOrientation >= 0) {
@@ -136,6 +137,13 @@ export function buildCommandPreview(serial: string, settings: DeviceSettings): s
   // ─── Recording ────────────────────────────────────────────────────────────
   if (settings.recordingEnabled && settings.recordFile) {
     args.push("--record", settings.recordFile);
+    // Add --record-format if set and differs from file extension
+    if (settings.recordFormat) {
+      const ext = settings.recordFile.split(".").pop()?.toLowerCase();
+      if (ext !== settings.recordFormat) {
+        args.push("--record-format", settings.recordFormat);
+      }
+    }
   }
 
   // ─── Input Modes ──────────────────────────────────────────────────────────
@@ -188,5 +196,23 @@ export function buildCommandPreview(serial: string, settings: DeviceSettings): s
     args.push("--time-limit", settings.timeLimit.toString());
   }
 
-  return args.join(" ");
+  return args;
+}
+
+/**
+ * Format args array into a display string. Values containing spaces or
+ * special characters are quoted for readability.
+ */
+export function formatCommandDisplay(args: string[]): string {
+  return "scrcpy " + args.map(a =>
+    /[\s"'\\$`]/.test(a) || a === "" ? `"${a}"` : a
+  ).join(" ");
+}
+
+/**
+ * @deprecated Use buildArgs() + formatCommandDisplay() instead.
+ * Kept temporarily for backward compatibility during migration.
+ */
+export function buildCommandPreview(serial: string, settings: DeviceSettings): string {
+  return formatCommandDisplay(buildArgs(serial, settings));
 }

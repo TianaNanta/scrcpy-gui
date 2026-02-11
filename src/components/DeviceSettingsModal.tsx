@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Device } from "../types/device";
 import type { DeviceSettings } from "../types/settings";
-import { buildCommandPreview } from "../utils/command-builder";
+import { buildArgs, formatCommandDisplay } from "../utils/command-builder";
 import CommandPreview from "./CommandPreview";
 import DisplayPanel from "./settings-panels/DisplayPanel";
 import WindowPanel from "./settings-panels/WindowPanel";
@@ -30,6 +30,7 @@ interface DeviceSettingsModalProps {
   onSettingsChange: (updates: Partial<DeviceSettings>) => void;
   onClose: () => void;
   onLaunch: () => void;
+  onSave?: (settings: DeviceSettings) => void;
 }
 
 export default function DeviceSettingsModal({
@@ -46,10 +47,16 @@ export default function DeviceSettingsModal({
   onSettingsChange,
   onClose,
   onLaunch,
+  onSave,
 }: DeviceSettingsModalProps) {
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set());
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
+
+  const handleClose = useCallback(() => {
+    onSave?.(settings);
+    onClose();
+  }, [onSave, onClose, settings]);
 
   useEffect(() => {
     triggerRef.current = document.activeElement;
@@ -65,7 +72,7 @@ export default function DeviceSettingsModal({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        handleClose();
         return;
       }
       if (e.key !== "Tab") return;
@@ -83,7 +90,7 @@ export default function DeviceSettingsModal({
         first.focus();
       }
     },
-    [onClose],
+    [handleClose],
   );
 
   const togglePanel = useCallback(
@@ -101,10 +108,10 @@ export default function DeviceSettingsModal({
     [],
   );
 
-  const generatedCommand = buildCommandPreview(serial, settings);
+  const generatedCommand = formatCommandDisplay(buildArgs(serial, settings));
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleClose}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
@@ -139,7 +146,7 @@ export default function DeviceSettingsModal({
             </button>
             <button
               className="modal-close"
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Close"
             >
               ×

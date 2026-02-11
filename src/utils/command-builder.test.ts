@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildCommandPreview } from "./command-builder";
+import { buildCommandPreview, buildArgs, formatCommandDisplay } from "./command-builder";
 import { DEFAULT_DEVICE_SETTINGS } from "../types/settings";
 import type { DeviceSettings } from "../types/settings";
 
@@ -222,7 +222,7 @@ describe("buildCommandPreview", () => {
 
     it("adds window-title when set", () => {
       const cmd = buildCommandPreview(serial, settings({ windowTitle: "My Phone" }));
-      expect(cmd).toContain("--window-title My Phone");
+      expect(cmd).toContain('--window-title "My Phone"');
     });
   });
 
@@ -408,4 +408,111 @@ describe("buildCommandPreview", () => {
       expect(cmd).toContain("--no-playback");
     });
   });
+});
+
+describe("buildArgs", () => {
+  const serial = "DEVICE123";
+
+  it("returns string[] (not a joined string)", () => {
+    const args = buildArgs(serial, settings());
+    expect(Array.isArray(args)).toBe(true);
+    expect(args.every((a) => typeof a === "string")).toBe(true);
+  });
+
+  it("starts with -s <serial>", () => {
+    const args = buildArgs(serial, settings());
+    expect(args[0]).toBe("-s");
+    expect(args[1]).toBe("DEVICE123");
+  });
+
+  it("OTG mode returns early with only -s and --otg", () => {
+    const args = buildArgs(serial, settings({
+      otgMode: true,
+      maxFps: 60,
+      alwaysOnTop: true,
+    }));
+    expect(args).toEqual(["-s", "DEVICE123", "--otg"]);
+  });
+
+  it("suppresses displayId, crop when camera mode", () => {
+    const args = buildArgs(serial, settings({
+      videoSource: "camera",
+      displayId: 2,
+      crop: "100:200:0:0",
+    }));
+    expect(args).not.toContain("--display-id");
+    expect(args).not.toContain("--crop");
+  });
+
+  it("suppresses displayId, crop when virtualDisplay enabled", () => {
+    const args = buildArgs(serial, settings({
+      virtualDisplay: true,
+      virtualDisplayResolution: "1920x1080",
+      displayId: 2,
+      crop: "100:200:0:0",
+    }));
+    expect(args).not.toContain("--display-id");
+    expect(args).not.toContain("--crop");
+  });
+
+  it("skips default bitrate (8000000)", () => {
+    const args = buildArgs(serial, settings({ bitrate: 8000000 }));
+    expect(args).not.toContain("-b");
+  });
+
+  it("skips default audioBitrate (128000)", () => {
+    const args = buildArgs(serial, settings({ audioBitrate: 128000 }));
+    expect(args).not.toContain("--audio-bit-rate");
+  });
+
+  it("preserves window title with spaces as a single array element", () => {
+    const args = buildArgs(serial, settings({ windowTitle: "My Android Phone" }));
+    const titleIdx = args.indexOf("--window-title");
+    expect(titleIdx).toBeGreaterThan(-1);
+    expect(args[titleIdx + 1]).toBe("My Android Phone");
+  });
+
+  it("adds --record-format when it differs from file extension", () => {
+    const args = buildArgs(serial, settings({
+      recordingEnabled: true,
+      recordFile: "/tmp/output.mp4",
+      recordFormat: "mkv",
+    }));
+    expect(args).toContain("--record-format");
+    expect(args[args.indexOf("--record-format") + 1]).toBe("mkv");
+  });
+
+  it("omits --record-format when it matches file extension", () => {
+    const args = buildArgs(serial, settings({
+      recordingEnabled: true,
+      recordFile: "/tmp/output.mp4",
+      recordFormat: "mp4",
+    }));
+    expect(args).not.toContain("--record-format");
+  });
+});
+
+describe("formatCommandDisplay", () => {
+  it("prepends 'scrcpy' to args", () => {
+    const result = formatCommandDisplay(["-s", "abc"]);
+    expect(result).toBe("scrcpy -s abc");
+  });
+
+  it("quotes values containing spaces", () => {
+    const result = formatCommandDisplay(["--window-title", "My Phone"]);
+    expect(result).toBe('scrcpy --window-title "My Phone"');
+  });
+
+  it("does not quote simple values", () => {
+    const result = formatCommandDisplay(["-s", "abc", "--max-fps", "60"]);
+    expect(result).toBe("scrcpy -s abc --max-fps 60");
+  });
+
+  it("buildCommandPreview uses buildArgs + formatCommandDisplay", () => {
+    const fromDeprecated = buildCommandPreview(serial, settings());
+    const fromNew = formatCommandDisplay(buildArgs(serial, settings()));
+    expect(fromDeprecated).toBe(fromNew);
+  });
+
+  const serial = "DEVICE123";
 });
