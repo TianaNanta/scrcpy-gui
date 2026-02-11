@@ -177,6 +177,16 @@ async fn start_scrcpy(
     always_on_top: bool,
     window_borderless: bool,
     fullscreen: bool,
+    max_fps: Option<u32>,
+    video_codec: Option<String>,
+    video_encoder: Option<String>,
+    video_buffer: Option<u32>,
+    power_off_on_close: bool,
+    no_power_on: bool,
+    audio_codec: Option<String>,
+    no_cleanup: bool,
+    force_adb_forward: bool,
+    time_limit: Option<u32>,
 ) -> Result<(), String> {
     let mut cmd = Command::new("scrcpy");
     cmd.arg("-s").arg(&serial);
@@ -271,6 +281,52 @@ async fn start_scrcpy(
 
     if fullscreen {
         cmd.arg("--fullscreen");
+    }
+
+    if let Some(max_fps) = max_fps {
+        cmd.arg("--max-fps").arg(max_fps.to_string());
+    }
+
+    if let Some(video_codec) = video_codec {
+        if !video_codec.is_empty() && video_codec != "h264" {
+            cmd.arg("--video-codec").arg(video_codec);
+        }
+    }
+
+    if let Some(video_encoder) = video_encoder {
+        if !video_encoder.is_empty() {
+            cmd.arg("--video-encoder").arg(video_encoder);
+        }
+    }
+
+    if let Some(video_buffer) = video_buffer {
+        cmd.arg("--video-buffer").arg(video_buffer.to_string());
+    }
+
+    if power_off_on_close {
+        cmd.arg("--power-off-on-close");
+    }
+
+    if no_power_on {
+        cmd.arg("--no-power-on");
+    }
+
+    if let Some(audio_codec) = audio_codec {
+        if !audio_codec.is_empty() && audio_codec != "opus" {
+            cmd.arg("--audio-codec").arg(audio_codec);
+        }
+    }
+
+    if no_cleanup {
+        cmd.arg("--no-cleanup");
+    }
+
+    if force_adb_forward {
+        cmd.arg("--force-adb-forward");
+    }
+
+    if let Some(time_limit) = time_limit {
+        cmd.arg("--time-limit").arg(time_limit.to_string());
     }
 
     cmd.stderr(Stdio::inherit());

@@ -50,6 +50,16 @@ interface Preset {
   alwaysOnTop: boolean;
   windowBorderless: boolean;
   fullscreen: boolean;
+  maxFps: number;
+  videoCodec: string;
+  videoEncoder: string;
+  videoBuffer: number;
+  powerOffOnClose: boolean;
+  noPowerOn: boolean;
+  audioCodec: string;
+  noCleanup: boolean;
+  forceAdbForward: boolean;
+  timeLimit: number;
 }
 
 interface ColorScheme {
@@ -84,6 +94,16 @@ interface DeviceSettings {
   alwaysOnTop: boolean;
   windowBorderless: boolean;
   fullscreen: boolean;
+  maxFps: number;
+  videoCodec: string;
+  videoEncoder: string;
+  videoBuffer: number;
+  powerOffOnClose: boolean;
+  noPowerOn: boolean;
+  audioCodec: string;
+  noCleanup: boolean;
+  forceAdbForward: boolean;
+  timeLimit: number;
 }
 
 interface LogEntry {
@@ -185,6 +205,20 @@ function App() {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [windowBorderless, setWindowBorderless] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+
+  // Performance & quality state
+  const [maxFps, setMaxFps] = useState<number>(0);
+  const [videoCodec, setVideoCodec] = useState<string>("h264");
+  const [videoEncoder, setVideoEncoder] = useState<string>("");
+  const [videoBuffer, setVideoBuffer] = useState<number>(0);
+  const [powerOffOnClose, setPowerOffOnClose] = useState(false);
+  const [noPowerOn, setNoPowerOn] = useState(false);
+
+  // Network optimization state
+  const [audioCodec, setAudioCodec] = useState<string>("opus");
+  const [noCleanup, setNoCleanup] = useState(false);
+  const [forceAdbForward, setForceAdbForward] = useState(false);
+  const [timeLimit, setTimeLimit] = useState<number>(0);
 
   // Device search and filter state
   const [deviceSearch, setDeviceSearch] = useState("");
@@ -341,7 +375,7 @@ function App() {
   };
 
   const loadDeviceSettings = (serial: string) => {
-    const settings = deviceSettings.get(serial) || {
+    const defaults: DeviceSettings = {
       name: deviceNames.get(serial) || "",
       bitrate: 8000000,
       maxSize: 0,
@@ -367,6 +401,20 @@ function App() {
       alwaysOnTop: false,
       windowBorderless: false,
       fullscreen: false,
+      maxFps: 0,
+      videoCodec: "h264",
+      videoEncoder: "",
+      videoBuffer: 0,
+      powerOffOnClose: false,
+      noPowerOn: false,
+      audioCodec: "opus",
+      noCleanup: false,
+      forceAdbForward: false,
+      timeLimit: 0,
+    };
+    const settings: DeviceSettings = {
+      ...defaults,
+      ...deviceSettings.get(serial),
     };
     setBitrate(settings.bitrate);
     setMaxSize(settings.maxSize);
@@ -398,6 +446,16 @@ function App() {
     setAlwaysOnTop(settings.alwaysOnTop);
     setWindowBorderless(settings.windowBorderless);
     setFullscreen(settings.fullscreen);
+    setMaxFps(settings.maxFps ?? 0);
+    setVideoCodec(settings.videoCodec ?? "h264");
+    setVideoEncoder(settings.videoEncoder ?? "");
+    setVideoBuffer(settings.videoBuffer ?? 0);
+    setPowerOffOnClose(settings.powerOffOnClose ?? false);
+    setNoPowerOn(settings.noPowerOn ?? false);
+    setAudioCodec(settings.audioCodec ?? "opus");
+    setNoCleanup(settings.noCleanup ?? false);
+    setForceAdbForward(settings.forceAdbForward ?? false);
+    setTimeLimit(settings.timeLimit ?? 0);
   };
 
   const loadPresets = () => {
@@ -429,6 +487,16 @@ function App() {
       alwaysOnTop,
       windowBorderless,
       fullscreen,
+      maxFps,
+      videoCodec,
+      videoEncoder,
+      videoBuffer,
+      powerOffOnClose,
+      noPowerOn,
+      audioCodec,
+      noCleanup,
+      forceAdbForward,
+      timeLimit,
     };
     const updated = [...presets, newPreset];
     setPresets(updated);
@@ -454,6 +522,16 @@ function App() {
     setAlwaysOnTop(preset.alwaysOnTop);
     setWindowBorderless(preset.windowBorderless);
     setFullscreen(preset.fullscreen);
+    setMaxFps(preset.maxFps ?? 0);
+    setVideoCodec(preset.videoCodec ?? "h264");
+    setVideoEncoder(preset.videoEncoder ?? "");
+    setVideoBuffer(preset.videoBuffer ?? 0);
+    setPowerOffOnClose(preset.powerOffOnClose ?? false);
+    setNoPowerOn(preset.noPowerOn ?? false);
+    setAudioCodec(preset.audioCodec ?? "opus");
+    setNoCleanup(preset.noCleanup ?? false);
+    setForceAdbForward(preset.forceAdbForward ?? false);
+    setTimeLimit(preset.timeLimit ?? 0);
   };
 
   const addLog = (message: string, level: LogLevel = "INFO") => {
@@ -570,7 +648,7 @@ function App() {
       return;
     }
 
-    const settings = deviceSettings.get(deviceSerial) || {
+    const defaultSettings: DeviceSettings = {
       name: "",
       bitrate: 8000000,
       maxSize: 0,
@@ -596,6 +674,20 @@ function App() {
       alwaysOnTop: false,
       windowBorderless: false,
       fullscreen: false,
+      maxFps: 0,
+      videoCodec: "h264",
+      videoEncoder: "",
+      videoBuffer: 0,
+      powerOffOnClose: false,
+      noPowerOn: false,
+      audioCodec: "opus",
+      noCleanup: false,
+      forceAdbForward: false,
+      timeLimit: 0,
+    };
+    const settings: DeviceSettings = {
+      ...defaultSettings,
+      ...deviceSettings.get(deviceSerial),
     };
 
     addLog(`Starting scrcpy for device: ${deviceSerial}`);
@@ -604,17 +696,17 @@ function App() {
         serial: deviceSerial,
         bitrate: settings.bitrate > 0 ? settings.bitrate : undefined,
         maxSize: settings.maxSize > 0 ? settings.maxSize : undefined,
-        noControl: settings.noControl,
-        turnScreenOff: settings.turnScreenOff,
-        stayAwake: settings.stayAwake,
-        showTouches: settings.showTouches,
-        record: settings.recordingEnabled,
+        noControl: settings.noControl ?? false,
+        turnScreenOff: settings.turnScreenOff ?? false,
+        stayAwake: settings.stayAwake ?? false,
+        showTouches: settings.showTouches ?? false,
+        record: settings.recordingEnabled ?? false,
         recordFile: settings.recordingEnabled ? settings.recordFile : undefined,
-        audioForwarding: settings.audioForwarding,
+        audioForwarding: settings.audioForwarding ?? false,
         audioBitrate: settings.audioForwarding
           ? settings.audioBitrate
           : undefined,
-        microphoneForwarding: settings.microphoneForwarding,
+        microphoneForwarding: settings.microphoneForwarding ?? false,
         displayId: settings.displayId,
         rotation: settings.rotation,
         crop: settings.crop.trim() || undefined,
@@ -630,9 +722,26 @@ function App() {
           settings.windowWidth > 0 ? settings.windowWidth : undefined,
         windowHeight:
           settings.windowHeight > 0 ? settings.windowHeight : undefined,
-        alwaysOnTop: settings.alwaysOnTop,
-        windowBorderless: settings.windowBorderless,
-        fullscreen: settings.fullscreen,
+        alwaysOnTop: settings.alwaysOnTop ?? false,
+        windowBorderless: settings.windowBorderless ?? false,
+        fullscreen: settings.fullscreen ?? false,
+        maxFps: settings.maxFps > 0 ? settings.maxFps : undefined,
+        videoCodec:
+          settings.videoCodec && settings.videoCodec !== "h264"
+            ? settings.videoCodec
+            : undefined,
+        videoEncoder: settings.videoEncoder || undefined,
+        videoBuffer:
+          settings.videoBuffer > 0 ? settings.videoBuffer : undefined,
+        powerOffOnClose: settings.powerOffOnClose ?? false,
+        noPowerOn: settings.noPowerOn ?? false,
+        audioCodec:
+          settings.audioCodec && settings.audioCodec !== "opus"
+            ? settings.audioCodec
+            : undefined,
+        noCleanup: settings.noCleanup ?? false,
+        forceAdbForward: settings.forceAdbForward ?? false,
+        timeLimit: settings.timeLimit > 0 ? settings.timeLimit : undefined,
       });
       setActiveDevices((prev) => [...prev, deviceSerial]);
       addLog(
@@ -1043,6 +1152,18 @@ function App() {
                   if (alwaysOnTop) cmd += ` --always-on-top`;
                   if (windowBorderless) cmd += ` --window-borderless`;
                   if (fullscreen) cmd += ` --fullscreen`;
+                  if (maxFps > 0) cmd += ` --max-fps ${maxFps}`;
+                  if (videoCodec && videoCodec !== "h264")
+                    cmd += ` --video-codec=${videoCodec}`;
+                  if (videoEncoder) cmd += ` --video-encoder="${videoEncoder}"`;
+                  if (videoBuffer > 0) cmd += ` --video-buffer ${videoBuffer}`;
+                  if (powerOffOnClose) cmd += ` --power-off-on-close`;
+                  if (noPowerOn) cmd += ` --no-power-on`;
+                  if (audioCodec && audioCodec !== "opus")
+                    cmd += ` --audio-codec=${audioCodec}`;
+                  if (noCleanup) cmd += ` --no-cleanup`;
+                  if (forceAdbForward) cmd += ` --force-adb-forward`;
+                  if (timeLimit > 0) cmd += ` --time-limit ${timeLimit}`;
                   return cmd;
                 })();
 
@@ -1146,6 +1267,16 @@ function App() {
                                 alwaysOnTop,
                                 windowBorderless,
                                 fullscreen,
+                                maxFps,
+                                videoCodec,
+                                videoEncoder,
+                                videoBuffer,
+                                powerOffOnClose,
+                                noPowerOn,
+                                audioCodec,
+                                noCleanup,
+                                forceAdbForward,
+                                timeLimit,
                               };
                               const newSettings = new Map(deviceSettings);
                               newSettings.set(
@@ -2008,6 +2139,475 @@ function App() {
                                   </div>
                                 </>
                               )}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="settings-panel"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <div
+                            className="panel-header"
+                            onClick={() => togglePanel("performance")}
+                            style={{
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "1rem 0",
+                              borderBottom: "1px solid #333",
+                            }}
+                          >
+                            <h4 style={{ margin: 0, fontSize: "1.1rem" }}>
+                              Performance & Quality
+                            </h4>
+                            <ChevronDownIcon
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                transform: expandedPanels.has("performance")
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }}
+                            />
+                          </div>
+                          {expandedPanels.has("performance") && (
+                            <div
+                              className="panel-content"
+                              style={{ padding: "1rem 0" }}
+                            >
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Maximum FPS:
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="240"
+                                    value={maxFps}
+                                    onChange={(e) =>
+                                      setMaxFps(Number(e.target.value))
+                                    }
+                                    placeholder="0 (unlimited)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Limit the capture frame rate (0 = unlimited)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Video Codec:
+                                  <select
+                                    value={videoCodec}
+                                    onChange={(e) =>
+                                      setVideoCodec(e.target.value)
+                                    }
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <option value="h264">
+                                      H.264 (default)
+                                    </option>
+                                    <option value="h265">H.265 (HEVC)</option>
+                                    <option value="av1">AV1</option>
+                                  </select>
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    H.265 and AV1 may offer better quality at
+                                    lower bitrates but require device support
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Video Encoder:
+                                  <input
+                                    type="text"
+                                    value={videoEncoder}
+                                    onChange={(e) =>
+                                      setVideoEncoder(e.target.value)
+                                    }
+                                    placeholder="Default (auto-select)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Specific encoder name (e.g.
+                                    OMX.qcom.video.encoder.avc). Leave empty for
+                                    auto
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Video Buffer (ms):
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={videoBuffer}
+                                    onChange={(e) =>
+                                      setVideoBuffer(Number(e.target.value))
+                                    }
+                                    placeholder="0 (disabled)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Add a buffering delay for video (in
+                                    milliseconds) to reduce jitter
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={powerOffOnClose}
+                                    onChange={(e) =>
+                                      setPowerOffOnClose(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Power Off on Close
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginLeft: "0.5rem",
+                                    }}
+                                  >
+                                    — turn device screen off when scrcpy closes
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={noPowerOn}
+                                    onChange={(e) =>
+                                      setNoPowerOn(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Don't Power On
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginLeft: "0.5rem",
+                                    }}
+                                  >
+                                    — don't wake the device when starting scrcpy
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="settings-panel"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <div
+                            className="panel-header"
+                            onClick={() => togglePanel("network")}
+                            style={{
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "1rem 0",
+                              borderBottom: "1px solid #333",
+                            }}
+                          >
+                            <h4 style={{ margin: 0, fontSize: "1.1rem" }}>
+                              Network & Connection
+                            </h4>
+                            <ChevronDownIcon
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                transform: expandedPanels.has("network")
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }}
+                            />
+                          </div>
+                          {expandedPanels.has("network") && (
+                            <div
+                              className="panel-content"
+                              style={{ padding: "1rem 0" }}
+                            >
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Audio Codec:
+                                  <select
+                                    value={audioCodec}
+                                    onChange={(e) =>
+                                      setAudioCodec(e.target.value)
+                                    }
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <option value="opus">Opus (default)</option>
+                                    <option value="aac">AAC</option>
+                                    <option value="flac">FLAC</option>
+                                    <option value="raw">Raw</option>
+                                  </select>
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Select the audio codec for streaming (Opus
+                                    is recommended for low latency)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="input-label"
+                                  style={{
+                                    color: "white",
+                                    display: "block",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Time Limit (seconds):
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={timeLimit}
+                                    onChange={(e) =>
+                                      setTimeLimit(Number(e.target.value))
+                                    }
+                                    placeholder="0 (no limit)"
+                                    style={{
+                                      backgroundColor: "#1e1e2e",
+                                      color: "white",
+                                      border: "1px solid #333",
+                                      padding: "0.5rem",
+                                      borderRadius: "4px",
+                                      width: "100%",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginTop: "0.25rem",
+                                      display: "block",
+                                    }}
+                                  >
+                                    Automatically stop mirroring after the given
+                                    number of seconds (0 = no limit)
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={forceAdbForward}
+                                    onChange={(e) =>
+                                      setForceAdbForward(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  Force ADB Forward
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginLeft: "0.5rem",
+                                    }}
+                                  >
+                                    — use "adb forward" instead of "adb reverse"
+                                    for connection
+                                  </span>
+                                </label>
+                              </div>
+                              <div
+                                className="row"
+                                style={{ marginBottom: "1rem" }}
+                              >
+                                <label
+                                  className="checkbox-label"
+                                  style={{
+                                    color: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={noCleanup}
+                                    onChange={(e) =>
+                                      setNoCleanup(e.target.checked)
+                                    }
+                                    style={{ marginRight: "0.5rem" }}
+                                  />
+                                  No Cleanup
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "#888",
+                                      marginLeft: "0.5rem",
+                                    }}
+                                  >
+                                    — don't restore device state on disconnect
+                                    (useful for reconnection)
+                                  </span>
+                                </label>
+                              </div>
                             </div>
                           )}
                         </div>
