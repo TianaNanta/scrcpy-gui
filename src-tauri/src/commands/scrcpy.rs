@@ -408,3 +408,185 @@ pub async fn kill_all_scrcpy() {
         let _ = child.wait().await;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Verify ScrcpyConfig can be deserialized from the JSON the frontend sends.
+    /// This is the critical contract between buildInvokeConfig (TS) and ScrcpyConfig (Rust).
+    #[test]
+    fn deserialize_minimal_config() {
+        let json = serde_json::json!({
+            "serial": "DEVICE123",
+            "noAudio": false,
+            "audioForwarding": true,
+            "microphoneForwarding": false,
+            "noVideo": false,
+            "noPlayback": false,
+            "alwaysOnTop": false,
+            "windowBorderless": false,
+            "fullscreen": false,
+            "noControl": false,
+            "turnScreenOff": false,
+            "stayAwake": false,
+            "showTouches": false,
+            "powerOffOnClose": false,
+            "noPowerOn": false,
+            "record": false,
+            "otgMode": false,
+            "noCleanup": false,
+            "forceAdbForward": false,
+        });
+        let config: ScrcpyConfig = serde_json::from_value(json).unwrap();
+        assert_eq!(config.serial, "DEVICE123");
+        assert!(!config.no_audio);
+        assert!(config.audio_forwarding);
+        assert!(!config.otg_mode);
+        assert!(config.bitrate.is_none());
+        assert!(config.video_source.is_none());
+    }
+
+    #[test]
+    fn deserialize_full_config() {
+        let json_str = r#"{
+            "serial": "abc",
+            "bitrate": 4000000,
+            "maxSize": 1080,
+            "maxFps": 60,
+            "videoCodec": "h265",
+            "videoEncoder": "OMX.test",
+            "videoBuffer": 100,
+            "videoSource": "camera",
+            "cameraFacing": "back",
+            "cameraSize": "1920x1080",
+            "cameraId": "2",
+            "noAudio": false,
+            "audioForwarding": true,
+            "audioBitrate": 192000,
+            "audioCodec": "aac",
+            "microphoneForwarding": true,
+            "noVideo": false,
+            "noPlayback": true,
+            "displayId": 2,
+            "rotation": 90,
+            "crop": "100:200:0:0",
+            "lockVideoOrientation": 1,
+            "displayBuffer": 50,
+            "windowX": 100,
+            "windowY": 200,
+            "windowWidth": 800,
+            "windowHeight": 600,
+            "alwaysOnTop": true,
+            "windowBorderless": true,
+            "fullscreen": false,
+            "windowTitle": "My Phone",
+            "noControl": false,
+            "turnScreenOff": true,
+            "stayAwake": true,
+            "showTouches": false,
+            "powerOffOnClose": true,
+            "noPowerOn": false,
+            "record": true,
+            "recordFile": "/tmp/output.mp4",
+            "keyboardMode": "uhid",
+            "mouseMode": "aoa",
+            "gamepadMode": "uhid",
+            "v4l2Sink": "/dev/video2",
+            "v4l2Buffer": 50,
+            "virtualDisplay": "1920x1080/320",
+            "startApp": "org.videolan.vlc",
+            "otgMode": false,
+            "noCleanup": true,
+            "forceAdbForward": true,
+            "timeLimit": 30
+        }"#;
+        let config: ScrcpyConfig = serde_json::from_str(json_str).unwrap();
+        assert_eq!(config.serial, "abc");
+        assert_eq!(config.bitrate, Some(4000000));
+        assert_eq!(config.max_size, Some(1080));
+        assert_eq!(config.max_fps, Some(60));
+        assert_eq!(config.video_codec.as_deref(), Some("h265"));
+        assert_eq!(config.video_source.as_deref(), Some("camera"));
+        assert_eq!(config.camera_facing.as_deref(), Some("back"));
+        assert_eq!(config.audio_bitrate, Some(192000));
+        assert_eq!(config.audio_codec.as_deref(), Some("aac"));
+        assert!(config.microphone_forwarding);
+        assert!(config.no_playback);
+        assert_eq!(config.display_id, Some(2));
+        assert_eq!(config.lock_video_orientation, Some(1));
+        assert!(config.always_on_top);
+        assert!(config.window_borderless);
+        assert_eq!(config.window_title.as_deref(), Some("My Phone"));
+        assert!(config.turn_screen_off);
+        assert!(config.stay_awake);
+        assert!(config.power_off_on_close);
+        assert!(config.record);
+        assert_eq!(config.record_file.as_deref(), Some("/tmp/output.mp4"));
+        assert_eq!(config.keyboard_mode.as_deref(), Some("uhid"));
+        assert_eq!(config.mouse_mode.as_deref(), Some("aoa"));
+        assert_eq!(config.gamepad_mode.as_deref(), Some("uhid"));
+        assert_eq!(config.v4l2_sink.as_deref(), Some("/dev/video2"));
+        assert_eq!(config.v4l2_buffer, Some(50));
+        assert_eq!(config.virtual_display.as_deref(), Some("1920x1080/320"));
+        assert_eq!(config.start_app.as_deref(), Some("org.videolan.vlc"));
+        assert!(config.no_cleanup);
+        assert!(config.force_adb_forward);
+        assert_eq!(config.time_limit, Some(30));
+    }
+
+    #[test]
+    fn deserialize_otg_mode() {
+        let json = serde_json::json!({
+            "serial": "OTG_DEVICE",
+            "noAudio": false,
+            "audioForwarding": false,
+            "microphoneForwarding": false,
+            "noVideo": false,
+            "noPlayback": false,
+            "alwaysOnTop": false,
+            "windowBorderless": false,
+            "fullscreen": false,
+            "noControl": false,
+            "turnScreenOff": false,
+            "stayAwake": false,
+            "showTouches": false,
+            "powerOffOnClose": false,
+            "noPowerOn": false,
+            "record": false,
+            "otgMode": true,
+            "noCleanup": false,
+            "forceAdbForward": false,
+        });
+        let config: ScrcpyConfig = serde_json::from_value(json).unwrap();
+        assert!(config.otg_mode);
+        assert_eq!(config.serial, "OTG_DEVICE");
+    }
+
+    #[test]
+    fn deserialize_rejects_missing_required_bool() {
+        // Missing 'noAudio' (required bool field) should fail
+        let json = serde_json::json!({
+            "serial": "DEV",
+            "audioForwarding": true,
+            "microphoneForwarding": false,
+            "noVideo": false,
+            "noPlayback": false,
+            "alwaysOnTop": false,
+            "windowBorderless": false,
+            "fullscreen": false,
+            "noControl": false,
+            "turnScreenOff": false,
+            "stayAwake": false,
+            "showTouches": false,
+            "powerOffOnClose": false,
+            "noPowerOn": false,
+            "record": false,
+            "otgMode": false,
+            "noCleanup": false,
+            "forceAdbForward": false,
+        });
+        let result: Result<ScrcpyConfig, _> = serde_json::from_value(json);
+        assert!(result.is_err());
+    }
+}
