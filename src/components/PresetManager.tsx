@@ -55,15 +55,14 @@ export default function PresetManager({
           {presets.map((preset) => (
             <div key={preset.id} className="preset-item">
               <span>{preset.name}</span>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div className="preset-actions">
                 <button className="btn btn-secondary" onClick={() => onLoadPreset(preset)} aria-label={`Load preset ${preset.name}`}>
                   Load
                 </button>
                 {onDeletePreset && (
                   <button
-                    className="btn btn-secondary"
+                    className="btn btn-secondary btn-delete-text"
                     onClick={() => onDeletePreset(preset.id)}
-                    style={{ color: "#ef4444" }}
                     aria-label={`Delete preset ${preset.name}`}
                   >
                     Delete
@@ -73,7 +72,7 @@ export default function PresetManager({
             </div>
           ))}
           {presets.length === 0 && (
-            <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: "1rem" }}>
+            <p className="text-caption" style={{ textAlign: "center", padding: "var(--space-lg)" }}>
               No presets saved yet. Configure your settings and save a preset.
             </p>
           )}

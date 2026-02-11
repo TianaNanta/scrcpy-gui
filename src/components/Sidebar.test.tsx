@@ -13,6 +13,11 @@ vi.mock("@heroicons/react/24/outline", () => ({
   ArrowPathIcon: (props: Record<string, unknown>) => <span data-testid="arrow-icon" {...props} />,
 }));
 
+vi.mock("@heroicons/react/24/solid", () => ({
+  CheckCircleIcon: (props: Record<string, unknown>) => <span data-testid="check-circle-icon" {...props} />,
+  XCircleIcon: (props: Record<string, unknown>) => <span data-testid="x-circle-icon" {...props} />,
+}));
+
 describe("Sidebar", () => {
   const defaultProps = {
     currentTab: "devices" as Tab,
@@ -50,28 +55,32 @@ describe("Sidebar", () => {
 
   it("shows dependency status when both available", () => {
     render(<Sidebar {...defaultProps} />);
-    expect(screen.getByText("ADB:")).toBeInTheDocument();
-    expect(screen.getByText("Scrcpy:")).toBeInTheDocument();
-    // Both should show ✓
-    const checkmarks = screen.getAllByText("✓");
-    expect(checkmarks).toHaveLength(2);
+    // Both should show as "ready" badges with check icons
+    const adbBadge = screen.getByText("ADB").closest("span");
+    const scrcpyBadge = screen.getByText("Scrcpy").closest("span");
+    expect(adbBadge?.className).toContain("ready");
+    expect(scrcpyBadge?.className).toContain("ready");
+    expect(screen.getAllByTestId("check-circle-icon")).toHaveLength(2);
   });
 
-  it("shows ✗ when dependencies are missing", () => {
+  it("shows error badges when dependencies are missing", () => {
     render(
       <Sidebar
         {...defaultProps}
         dependencies={{ adb: false, scrcpy: false }}
       />,
     );
-    const crosses = screen.getAllByText("✗");
-    expect(crosses).toHaveLength(2);
+    const adbBadge = screen.getByText("ADB").closest("span");
+    const scrcpyBadge = screen.getByText("Scrcpy").closest("span");
+    expect(adbBadge?.className).toContain("not-ready");
+    expect(scrcpyBadge?.className).toContain("not-ready");
+    expect(screen.getAllByTestId("x-circle-icon")).toHaveLength(2);
   });
 
   it("handles null dependencies gracefully", () => {
     render(<Sidebar {...defaultProps} dependencies={null} />);
-    const crosses = screen.getAllByText("✗");
-    expect(crosses).toHaveLength(2);
+    const badges = screen.getAllByTestId("x-circle-icon");
+    expect(badges).toHaveLength(2);
   });
 
   it("calls onRefreshDeps when refresh button is clicked", () => {

@@ -38,8 +38,10 @@ describe("VideoSourcePanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<VideoSourcePanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Video Source:")).not.toBeInTheDocument();
+    const { container } = render(<VideoSourcePanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("has aria-expanded attribute on header", () => {

@@ -39,8 +39,10 @@ describe("VirtualDisplayPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<VirtualDisplayPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Enable Virtual Display")).not.toBeInTheDocument();
+    const { container } = render(<VirtualDisplayPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows version warning when canVirtualDisplay is false", () => {

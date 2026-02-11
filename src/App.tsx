@@ -39,6 +39,7 @@ function App() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [dependencies, setDependencies] = useState<Dependencies | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [currentTab, setCurrentTab] = useState<Tab>("devices");
@@ -96,6 +97,20 @@ function App() {
         root.style.setProperty("--text-secondary", "#94a3b8");
         root.style.setProperty("--border-color", "#475569");
         root.style.setProperty("--input-bg", "rgba(30, 41, 59, 0.95)");
+        // Shadow tokens (dark — higher opacity)
+        root.style.setProperty("--shadow-subtle", "0 1px 2px rgba(0,0,0,0.20)");
+        root.style.setProperty("--shadow-medium", "0 2px 8px rgba(0,0,0,0.30)");
+        root.style.setProperty("--shadow-elevated", "0 8px 24px rgba(0,0,0,0.40)");
+        root.style.setProperty("--shadow-floating", "0 16px 48px rgba(0,0,0,0.50)");
+        // Status colors (dark)
+        root.style.setProperty("--status-success-bg", "hsl(145, 40%, 18%)");
+        root.style.setProperty("--status-success-text", "hsl(145, 60%, 65%)");
+        root.style.setProperty("--status-error-bg", "hsl(0, 45%, 20%)");
+        root.style.setProperty("--status-error-text", "hsl(0, 65%, 68%)");
+        root.style.setProperty("--status-warning-bg", "hsl(40, 45%, 18%)");
+        root.style.setProperty("--status-warning-text", "hsl(40, 70%, 65%)");
+        root.style.setProperty("--status-info-bg", "hsl(210, 40%, 18%)");
+        root.style.setProperty("--status-info-text", "hsl(210, 60%, 65%)");
       } else {
         root.style.setProperty("--background", "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)");
         root.style.setProperty("--surface", "rgba(255, 255, 255, 0.95)");
@@ -103,9 +118,24 @@ function App() {
         root.style.setProperty("--text-secondary", "#6b7280");
         root.style.setProperty("--border-color", "#e5e7eb");
         root.style.setProperty("--input-bg", "white");
+        // Shadow tokens (light)
+        root.style.setProperty("--shadow-subtle", "0 1px 2px rgba(0,0,0,0.06)");
+        root.style.setProperty("--shadow-medium", "0 2px 8px rgba(0,0,0,0.10)");
+        root.style.setProperty("--shadow-elevated", "0 8px 24px rgba(0,0,0,0.12)");
+        root.style.setProperty("--shadow-floating", "0 16px 48px rgba(0,0,0,0.16)");
+        // Status colors (light)
+        root.style.setProperty("--status-success-bg", "hsl(145, 65%, 92%)");
+        root.style.setProperty("--status-success-text", "hsl(145, 70%, 28%)");
+        root.style.setProperty("--status-error-bg", "hsl(0, 75%, 93%)");
+        root.style.setProperty("--status-error-text", "hsl(0, 70%, 35%)");
+        root.style.setProperty("--status-warning-bg", "hsl(40, 90%, 90%)");
+        root.style.setProperty("--status-warning-text", "hsl(30, 80%, 30%)");
+        root.style.setProperty("--status-info-bg", "hsl(210, 75%, 92%)");
+        root.style.setProperty("--status-info-text", "hsl(210, 70%, 32%)");
       }
       root.style.setProperty("--primary-color", newColorScheme.primary);
       root.style.setProperty("--primary-hover", newColorScheme.primaryHover);
+      root.style.setProperty("--primary-color-rgb", newColorScheme.primary.replace("#", "").match(/.{2}/g)?.map(h => parseInt(h, 16)).join(", ") || "59, 130, 246");
       root.style.setProperty("--font-size", `${newFontSize}px`);
     },
     [],
@@ -200,6 +230,7 @@ function App() {
   }
 
   async function listDevices() {
+    setRefreshing(true);
     try {
       const devs: Device[] = await invoke("list_devices");
       setDevices(devs);
@@ -209,6 +240,8 @@ function App() {
       addLog(`Devices listed: ${devs.length} found`, "INFO");
     } catch (e) {
       addLog(`Failed to list devices: ${e}`, "ERROR");
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -382,6 +415,7 @@ function App() {
               activeDevices={activeDevices}
               deviceNames={deviceNames}
               loading={loading}
+              refreshing={refreshing}
               wirelessConnecting={wirelessConnecting}
               deviceSearch={deviceSearch}
               deviceFilter={deviceFilter}

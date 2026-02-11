@@ -15,45 +15,28 @@ export default function WindowPanel({
   onToggle,
 }: WindowPanelProps) {
   return (
-    <div className="settings-panel" style={{ marginBottom: "1rem" }}>
+    <div className="settings-panel">
       <button
-        className="panel-header"
+        className={`panel-header${expanded ? ' expanded' : ''}`}
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <h4 style={{ margin: 0, fontSize: "1.1rem" }}>Window Management</h4>
-        <ChevronDownIcon
-          style={{
-            width: "1rem",
-            height: "1rem",
-            transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s",
-          }}
-        />
+        <h4>Window Management</h4>
+        <ChevronDownIcon />
       </button>
-      {expanded && (
-        <div className="panel-content" style={{ padding: "1rem 0" }}>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+      <div className={`panel-content${expanded ? ' expanded' : ''}`} aria-hidden={!expanded}>
+          <div className="row">
             <label
               className="input-label"
-              style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
             >
               Window Position:
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div>
                 <input
                   type="number"
                   min="0"
                   value={settings.windowX}
                   onChange={(e) => onSettingsChange({ windowX: Number(e.target.value) })}
                   placeholder="X"
-                  style={{
-                    backgroundColor: "#1e1e2e",
-                    color: "white",
-                    border: "1px solid #333",
-                    padding: "0.5rem",
-                    borderRadius: "4px",
-                    flex: 1,
-                  }}
                 />
                 <input
                   type="number"
@@ -61,42 +44,25 @@ export default function WindowPanel({
                   value={settings.windowY}
                   onChange={(e) => onSettingsChange({ windowY: Number(e.target.value) })}
                   placeholder="Y"
-                  style={{
-                    backgroundColor: "#1e1e2e",
-                    color: "white",
-                    border: "1px solid #333",
-                    padding: "0.5rem",
-                    borderRadius: "4px",
-                    flex: 1,
-                  }}
                 />
               </div>
-              <span style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem", display: "block" }}>
+              <span className="hint">
                 X and Y coordinates (0 = default position)
               </span>
             </label>
           </div>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+          <div className="row">
             <label
               className="input-label"
-              style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
             >
               Window Size:
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div>
                 <input
                   type="number"
                   min="0"
                   value={settings.windowWidth}
                   onChange={(e) => onSettingsChange({ windowWidth: Number(e.target.value) })}
                   placeholder="Width"
-                  style={{
-                    backgroundColor: "#1e1e2e",
-                    color: "white",
-                    border: "1px solid #333",
-                    padding: "0.5rem",
-                    borderRadius: "4px",
-                    flex: 1,
-                  }}
                 />
                 <input
                   type="number"
@@ -104,53 +70,40 @@ export default function WindowPanel({
                   value={settings.windowHeight}
                   onChange={(e) => onSettingsChange({ windowHeight: Number(e.target.value) })}
                   placeholder="Height"
-                  style={{
-                    backgroundColor: "#1e1e2e",
-                    color: "white",
-                    border: "1px solid #333",
-                    padding: "0.5rem",
-                    borderRadius: "4px",
-                    flex: 1,
-                  }}
                 />
               </div>
-              <span style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem", display: "block" }}>
+              <span className="hint">
                 Width and Height in pixels (0 = auto)
               </span>
             </label>
           </div>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+          <div className="row">
             <label
               className="checkbox-label"
-              style={{ color: "white", display: "flex", alignItems: "center" }}
             >
               <input
                 type="checkbox"
                 checked={settings.alwaysOnTop}
                 onChange={(e) => onSettingsChange({ alwaysOnTop: e.target.checked })}
-                style={{ marginRight: "0.5rem" }}
               />
               Always on Top
             </label>
           </div>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+          <div className="row">
             <label
               className="checkbox-label"
-              style={{ color: "white", display: "flex", alignItems: "center" }}
             >
               <input
                 type="checkbox"
                 checked={settings.windowBorderless}
                 onChange={(e) => onSettingsChange({ windowBorderless: e.target.checked })}
-                style={{ marginRight: "0.5rem" }}
               />
               Borderless Window
             </label>
           </div>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+          <div className="row">
             <label
               className="input-label"
-              style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
             >
               Window Title:
               <input
@@ -158,36 +111,25 @@ export default function WindowPanel({
                 value={settings.windowTitle}
                 onChange={(e) => onSettingsChange({ windowTitle: e.target.value })}
                 placeholder="Default (device model)"
-                style={{
-                  backgroundColor: "#1e1e2e",
-                  color: "white",
-                  border: "1px solid #333",
-                  padding: "0.5rem",
-                  borderRadius: "4px",
-                  width: "100%",
-                }}
               />
-              <span style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem", display: "block" }}>
+              <span className="hint">
                 Custom window title (leave empty for default)
               </span>
             </label>
           </div>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+          <div className="row">
             <label
               className="checkbox-label"
-              style={{ color: "white", display: "flex", alignItems: "center" }}
             >
               <input
                 type="checkbox"
                 checked={settings.fullscreen}
                 onChange={(e) => onSettingsChange({ fullscreen: e.target.checked })}
-                style={{ marginRight: "0.5rem" }}
               />
               Fullscreen Mode
             </label>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

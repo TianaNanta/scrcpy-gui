@@ -37,8 +37,10 @@ describe("WindowPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<WindowPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Window Position:")).not.toBeInTheDocument();
+    const { container } = render(<WindowPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("has aria-expanded attribute on header", () => {

@@ -5,6 +5,10 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/solid";
 import type { Dependencies } from "../types/device";
 
 export type Tab = "devices" | "presets" | "logs" | "settings";
@@ -54,7 +58,7 @@ export default function Sidebar({
         <DevicePhoneMobileIcon className="sidebar-logo" />
         <div className="sidebar-title">
           <h2>Scrcpy GUI</h2>
-          <span className="sidebar-version">v0.3.0</span>
+          <span className="sidebar-version">v0.5.0</span>
         </div>
       </div>
       <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">
@@ -79,19 +83,15 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <div className="dependency-status">
           <div className="dependency-item">
-            <span className="dependency-label">ADB:</span>
-            <span
-              className={`dependency-status ${dependencies?.adb ? "ready" : "not-ready"}`}
-            >
-              {dependencies?.adb ? "✓" : "✗"}
+            <span className={`dep-badge ${dependencies?.adb ? "ready" : "not-ready"}`}>
+              {dependencies?.adb ? <CheckCircleIcon /> : <XCircleIcon />}
+              ADB
             </span>
           </div>
           <div className="dependency-item">
-            <span className="dependency-label">Scrcpy:</span>
-            <span
-              className={`dependency-status ${dependencies?.scrcpy ? "ready" : "not-ready"}`}
-            >
-              {dependencies?.scrcpy ? "✓" : "✗"}
+            <span className={`dep-badge ${dependencies?.scrcpy ? "ready" : "not-ready"}`}>
+              {dependencies?.scrcpy ? <CheckCircleIcon /> : <XCircleIcon />}
+              Scrcpy
             </span>
           </div>
         </div>

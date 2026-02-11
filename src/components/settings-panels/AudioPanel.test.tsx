@@ -40,8 +40,10 @@ describe("AudioPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<AudioPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Audio Forwarding")).not.toBeInTheDocument();
+    const { container } = render(<AudioPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows version warning when canAudio is false", () => {

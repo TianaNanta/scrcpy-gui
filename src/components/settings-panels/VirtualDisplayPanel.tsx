@@ -18,45 +18,35 @@ export default function VirtualDisplayPanel({
   canVirtualDisplay,
 }: VirtualDisplayPanelProps) {
   return (
-    <div className="settings-panel" style={{ marginBottom: "1rem" }}>
+    <div className="settings-panel">
       <button
-        className="panel-header"
+        className={`panel-header${expanded ? ' expanded' : ''}`}
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <h4 style={{ margin: 0, fontSize: "1.1rem" }}>Virtual Display</h4>
-        <ChevronDownIcon
-          style={{
-            width: "1rem",
-            height: "1rem",
-            transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s",
-          }}
-        />
+        <h4>Virtual Display</h4>
+        <ChevronDownIcon />
       </button>
-      {expanded && (
-        <div className="panel-content" style={{ padding: "1rem 0" }}>
+      <div className={`panel-content${expanded ? ' expanded' : ''}`} aria-hidden={!expanded}>
           {!canVirtualDisplay && (
-            <div style={{ padding: "0.5rem", marginBottom: "1rem", backgroundColor: "#1e1e2e", borderRadius: "4px", border: "1px solid #555" }}>
-              <span style={{ fontSize: "0.85rem", color: "#f59e0b" }}>
+            <div className="version-warning">
+              <span>
                 Virtual display requires scrcpy ≥ 3.0
               </span>
             </div>
           )}
-          <div className="row" style={{ marginBottom: "1rem" }}>
+          <div className="row">
             <label
               className="checkbox-label"
-              style={{ color: "white", display: "flex", alignItems: "center", opacity: canVirtualDisplay ? 1 : 0.5 }}
             >
               <input
                 type="checkbox"
                 checked={settings.virtualDisplay}
                 onChange={(e) => onSettingsChange({ virtualDisplay: e.target.checked })}
                 disabled={!canVirtualDisplay}
-                style={{ marginRight: "0.5rem" }}
               />
               Enable Virtual Display
-              <span style={{ fontSize: "0.75rem", color: "#888", marginLeft: "0.5rem" }}>
+              <span className="hint">
                 — Create a new virtual display on the device
               </span>
             </label>
@@ -64,10 +54,9 @@ export default function VirtualDisplayPanel({
 
           {settings.virtualDisplay && canVirtualDisplay && (
             <>
-              <div className="row" style={{ marginBottom: "1rem" }}>
+              <div className="row">
                 <label
                   className="input-label"
-                  style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
                 >
                   Resolution:
                   <input
@@ -75,24 +64,15 @@ export default function VirtualDisplayPanel({
                     value={settings.virtualDisplayResolution}
                     onChange={(e) => onSettingsChange({ virtualDisplayResolution: e.target.value })}
                     placeholder="1920x1080"
-                    style={{
-                      backgroundColor: "#1e1e2e",
-                      color: "white",
-                      border: "1px solid #333",
-                      padding: "0.5rem",
-                      borderRadius: "4px",
-                      width: "100%",
-                    }}
                   />
-                  <span style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem", display: "block" }}>
+                  <span className="hint">
                     Virtual display resolution (WxH). Leave empty for device default.
                   </span>
                 </label>
               </div>
-              <div className="row" style={{ marginBottom: "1rem" }}>
+              <div className="row">
                 <label
                   className="input-label"
-                  style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
                 >
                   DPI:
                   <input
@@ -101,24 +81,15 @@ export default function VirtualDisplayPanel({
                     value={settings.virtualDisplayDpi}
                     onChange={(e) => onSettingsChange({ virtualDisplayDpi: Number(e.target.value) })}
                     placeholder="0 (default)"
-                    style={{
-                      backgroundColor: "#1e1e2e",
-                      color: "white",
-                      border: "1px solid #333",
-                      padding: "0.5rem",
-                      borderRadius: "4px",
-                      width: "100%",
-                    }}
                   />
-                  <span style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem", display: "block" }}>
+                  <span className="hint">
                     Virtual display density (0 = device default)
                   </span>
                 </label>
               </div>
-              <div className="row" style={{ marginBottom: "1rem" }}>
+              <div className="row">
                 <label
                   className="input-label"
-                  style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
                 >
                   Start App:
                   <input
@@ -126,24 +97,15 @@ export default function VirtualDisplayPanel({
                     value={settings.startApp}
                     onChange={(e) => onSettingsChange({ startApp: e.target.value })}
                     placeholder="com.example.app"
-                    style={{
-                      backgroundColor: "#1e1e2e",
-                      color: "white",
-                      border: "1px solid #333",
-                      padding: "0.5rem",
-                      borderRadius: "4px",
-                      width: "100%",
-                    }}
                   />
-                  <span style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.25rem", display: "block" }}>
+                  <span className="hint">
                     Package name to launch on the virtual display (e.g. org.videolan.vlc)
                   </span>
                 </label>
               </div>
             </>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

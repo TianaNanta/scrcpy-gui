@@ -42,11 +42,6 @@ export default function SettingsPage({
               value={theme}
               onChange={(e) => onThemeChange(e.target.value as Theme)}
               className="select"
-              style={{
-                backgroundColor: "var(--input-bg)",
-                color: "var(--text-primary)",
-                borderColor: "var(--border-color)",
-              }}
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -68,11 +63,6 @@ export default function SettingsPage({
                 if (scheme) onColorSchemeChange(scheme);
               }}
               className="select"
-              style={{
-                backgroundColor: "var(--input-bg)",
-                color: "var(--text-primary)",
-                borderColor: "var(--border-color)",
-              }}
             >
               {colorSchemes.map((scheme) => (
                 <option key={scheme.name} value={scheme.name}>
