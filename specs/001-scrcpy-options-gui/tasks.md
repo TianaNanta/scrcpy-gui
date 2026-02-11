@@ -25,10 +25,10 @@
 
 **Purpose**: Project initialization, new dependencies, tooling configuration
 
-- [ ] T001 Create project directory structure per plan.md (src/types/, src/components/, src/components/settings-panels/, src/hooks/, src/utils/, src-tauri/src/commands/)
-- [ ] T002 Install frontend dev dependencies via bun add -d vitest jsdom @testing-library/react @testing-library/jest-dom
-- [ ] T003 [P] Install and configure @tauri-apps/plugin-os via tauri plugin add os in src-tauri/
-- [ ] T004 [P] Configure Vitest with jsdom environment and WebCrypto polyfill in vitest.config.ts
+- [x] T001 Create project directory structure per plan.md (src/types/, src/components/, src/components/settings-panels/, src/hooks/, src/utils/, src-tauri/src/commands/)
+- [x] T002 Install frontend dev dependencies via bun add -d vitest jsdom @testing-library/react @testing-library/jest-dom
+- [x] T003 [P] Install and configure @tauri-apps/plugin-os via tauri plugin add os in src-tauri/
+- [x] T004 [P] Configure Vitest with jsdom environment and WebCrypto polyfill in vitest.config.ts
 
 ---
 
@@ -40,48 +40,48 @@
 
 ### Types & Utilities
 
-- [ ] T005 [P] Create Device and DeviceHealth interfaces extracted from App.tsx in src/types/device.ts
-- [ ] T006 [P] Create DeviceSettings (52 fields), Preset interface, and all enums (KeyboardMode, MouseMode, GamepadMode, VideoSource, CameraFacing) per data-model.md in src/types/settings.ts
-- [ ] T007 [P] Create ScrcpyVersion interface and version feature-gate helpers (hasAudio, hasCamera, hasUhidInput, hasGamepad, hasVirtualDisplay, hasNoVideo) per data-model.md in src/types/scrcpy.ts
-- [ ] T008 [P] Create platform detection constants (isLinux, isWindows, isMacOS) using @tauri-apps/plugin-os platform() in src/utils/platform.ts
-- [ ] T009 [P] Create buildCommandPreview function that generates a complete scrcpy command string from DeviceSettings (all existing flags) in src/utils/command-builder.ts
+- [x] T005 [P] Create Device and DeviceHealth interfaces extracted from App.tsx in src/types/device.ts
+- [x] T006 [P] Create DeviceSettings (52 fields), Preset interface, and all enums (KeyboardMode, MouseMode, GamepadMode, VideoSource, CameraFacing) per data-model.md in src/types/settings.ts
+- [x] T007 [P] Create ScrcpyVersion interface and version feature-gate helpers (hasAudio, hasCamera, hasUhidInput, hasGamepad, hasVirtualDisplay, hasNoVideo) per data-model.md in src/types/scrcpy.ts
+- [x] T008 [P] Create platform detection constants (isLinux, isWindows, isMacOS) using @tauri-apps/plugin-os platform() in src/utils/platform.ts
+- [x] T009 [P] Create buildCommandPreview function that generates a complete scrcpy command string from DeviceSettings (all existing flags) in src/utils/command-builder.ts
 
 ### Rust Backend Restructuring
 
-- [ ] T010 Create src-tauri/src/commands/mod.rs and extract existing commands from lib.rs into domain modules: device.rs (list_devices, get_device_health, test_device), connection.rs (connect/disconnect_wireless_device), file.rs (select_save_file)
-- [ ] T011 [P] Refactor start_scrcpy from 34 individual params to a single typed ScrcpyConfig struct (per data-model.md), add stderr capture via Stdio::piped() + tokio::spawn BufReader line reader + app.emit("scrcpy-log") per contracts, in src-tauri/src/commands/scrcpy.rs
-- [ ] T012 [P] Create get_scrcpy_version (parse scrcpy --version first line), get_platform (std::env::consts::OS), and list_v4l2_devices (#[cfg(target_os = "linux")] read_dir /dev/video*) commands per contracts in src-tauri/src/commands/system.rs
-- [ ] T013 Remove unused greet command and update Tauri command registration to use new commands/ modules in src-tauri/src/lib.rs
+- [x] T010 Create src-tauri/src/commands/mod.rs and extract existing commands from lib.rs into domain modules: device.rs (list_devices, get_device_health, test_device), connection.rs (connect/disconnect_wireless_device), file.rs (select_save_file)
+- [x] T011 [P] Refactor start_scrcpy from 34 individual params to a single typed ScrcpyConfig struct (per data-model.md), add stderr capture via Stdio::piped() + tokio::spawn BufReader line reader + app.emit("scrcpy-log") per contracts, in src-tauri/src/commands/scrcpy.rs
+- [x] T012 [P] Create get_scrcpy_version (parse scrcpy --version first line), get_platform (std::env::consts::OS), and list_v4l2_devices (#[cfg(target_os = "linux")] read_dir /dev/video*) commands per contracts in src-tauri/src/commands/system.rs
+- [x] T013 Remove unused greet command and update Tauri command registration to use new commands/ modules in src-tauri/src/lib.rs
 
 ### React Hooks
 
-- [ ] T014 Create useScrcpyVersion hook that invokes get_scrcpy_version on mount, parses ScrcpyVersion, and exposes feature-gate booleans per data-model.md in src/hooks/useScrcpyVersion.ts
-- [ ] T015 [P] Create useDeviceSettings hook with per-device settings state via useReducer, localStorage persistence, default values for new fields (backward-compatible preset migration), in src/hooks/useDeviceSettings.ts
-- [ ] T016 [P] Create useScrcpyProcess hook with start (invoke start_scrcpy with ScrcpyConfig), stop (invoke stop_scrcpy), and scrcpy-log event listener per contracts in src/hooks/useScrcpyProcess.ts
+- [x] T014 Create useScrcpyVersion hook that invokes get_scrcpy_version on mount, parses ScrcpyVersion, and exposes feature-gate booleans per data-model.md in src/hooks/useScrcpyVersion.ts
+- [x] T015 [P] Create useDeviceSettings hook with per-device settings state via useReducer, localStorage persistence, default values for new fields (backward-compatible preset migration), in src/hooks/useDeviceSettings.ts
+- [x] T016 [P] Create useScrcpyProcess hook with start (invoke start_scrcpy with ScrcpyConfig), stop (invoke stop_scrcpy), and scrcpy-log event listener per contracts in src/hooks/useScrcpyProcess.ts
 
 ### Component Extraction (from App.tsx)
 
-- [ ] T017 [P] Extract tab navigation sidebar from App.tsx into src/components/Sidebar.tsx
-- [ ] T018 [P] Extract device cards with search, filter, and health display from App.tsx into src/components/DeviceList.tsx
-- [ ] T019 [P] Extract generated command display and copy-to-clipboard button from App.tsx into src/components/CommandPreview.tsx
-- [ ] T020 [P] Extract logs tab content with scrcpy-log event integration from App.tsx into src/components/LogViewer.tsx
-- [ ] T021 [P] Extract presets tab (save, load, delete, apply presets with new field migration) from App.tsx into src/components/PresetManager.tsx
-- [ ] T022 [P] Extract settings/preferences tab (theme, font size, color scheme) from App.tsx into src/components/SettingsPage.tsx
-- [ ] T023 [P] Extract USB/wireless device pairing modal from App.tsx into src/components/PairDeviceModal.tsx
+- [x] T017 [P] Extract tab navigation sidebar from App.tsx into src/components/Sidebar.tsx
+- [x] T018 [P] Extract device cards with search, filter, and health display from App.tsx into src/components/DeviceList.tsx
+- [x] T019 [P] Extract generated command display and copy-to-clipboard button from App.tsx into src/components/CommandPreview.tsx
+- [x] T020 [P] Extract logs tab content with scrcpy-log event integration from App.tsx into src/components/LogViewer.tsx
+- [x] T021 [P] Extract presets tab (save, load, delete, apply presets with new field migration) from App.tsx into src/components/PresetManager.tsx
+- [x] T022 [P] Extract settings/preferences tab (theme, font size, color scheme) from App.tsx into src/components/SettingsPage.tsx
+- [x] T023 [P] Extract USB/wireless device pairing modal from App.tsx into src/components/PairDeviceModal.tsx
 
 ### Settings Panel Extraction (from App.tsx renderContent)
 
-- [ ] T024 [P] Extract resolution, rotation, crop, display ID settings from App.tsx into src/components/settings-panels/DisplayPanel.tsx
-- [ ] T025 [P] Extract window position, size, always-on-top, borderless, fullscreen settings from App.tsx into src/components/settings-panels/WindowPanel.tsx
-- [ ] T026 [P] Extract stay awake, show touches, turn screen off, no control settings from App.tsx into src/components/settings-panels/BehaviorPanel.tsx
-- [ ] T027 [P] Extract record toggle, record format, file path selection from App.tsx into src/components/settings-panels/RecordingPanel.tsx
-- [ ] T028 [P] Extract max FPS, video codec, video encoder, video buffer settings from App.tsx into src/components/settings-panels/PerformancePanel.tsx
-- [ ] T029 [P] Extract time limit, no cleanup, force ADB forward settings from App.tsx into src/components/settings-panels/NetworkPanel.tsx
+- [x] T024 [P] Extract resolution, rotation, crop, display ID settings from App.tsx into src/components/settings-panels/DisplayPanel.tsx
+- [x] T025 [P] Extract window position, size, always-on-top, borderless, fullscreen settings from App.tsx into src/components/settings-panels/WindowPanel.tsx
+- [x] T026 [P] Extract stay awake, show touches, turn screen off, no control settings from App.tsx into src/components/settings-panels/BehaviorPanel.tsx
+- [x] T027 [P] Extract record toggle, record format, file path selection from App.tsx into src/components/settings-panels/RecordingPanel.tsx
+- [x] T028 [P] Extract max FPS, video codec, video encoder, video buffer settings from App.tsx into src/components/settings-panels/PerformancePanel.tsx
+- [x] T029 [P] Extract time limit, no cleanup, force ADB forward settings from App.tsx into src/components/settings-panels/NetworkPanel.tsx
 
 ### Assembly
 
-- [ ] T030 Create DeviceSettingsModal as accordion shell that imports and renders all 6 extracted settings panels in src/components/DeviceSettingsModal.tsx
-- [ ] T031 Refactor src/App.tsx to slim shell: context providers wrapping Sidebar + tab content router, delegating all rendering to extracted components
+- [x] T030 Create DeviceSettingsModal as accordion shell that imports and renders all 6 extracted settings panels in src/components/DeviceSettingsModal.tsx
+- [x] T031 Refactor src/App.tsx to slim shell: context providers wrapping Sidebar + tab content router, delegating all rendering to extracted components
 
 **Checkpoint**: Foundation ready — existing functionality preserved in decomposed components, Rust backend restructured, all pre-existing constitution violations resolved. User story implementation can now begin.
 
@@ -95,9 +95,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T032 [P] [US1] Create keyboard mode dropdown (Default/SDK/UHID/AOA) and mouse mode dropdown (Default/SDK/UHID/AOA/Disabled) with version gating (≥2.4 via useScrcpyVersion) in src/components/settings-panels/InputControlPanel.tsx
-- [ ] T033 [P] [US1] Add keyboard_mode and mouse_mode flag generation (--keyboard=X, --mouse=X when not "default") to command preview in src/utils/command-builder.ts
-- [ ] T034 [US1] Integrate InputControlPanel into DeviceSettingsModal accordion as "Input & Control" section in src/components/DeviceSettingsModal.tsx
+- [x] T032 [P] [US1] Create keyboard mode dropdown (Default/SDK/UHID/AOA) and mouse mode dropdown (Default/SDK/UHID/AOA/Disabled) with version gating (≥2.4 via useScrcpyVersion) in src/components/settings-panels/InputControlPanel.tsx
+- [x] T033 [P] [US1] Add keyboard_mode and mouse_mode flag generation (--keyboard=X, --mouse=X when not "default") to command preview in src/utils/command-builder.ts
+- [x] T034 [US1] Integrate InputControlPanel into DeviceSettingsModal accordion as "Input & Control" section in src/components/DeviceSettingsModal.tsx
 
 **Checkpoint**: User Story 1 fully functional — keyboard/mouse mode selection works end-to-end with command preview and version gating.
 
@@ -111,9 +111,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T035 [P] [US2] Create audio forwarding toggle, audio codec dropdown (opus/aac/flac/raw), audio bitrate input, noAudio toggle, and noVideo toggle (FR-011) with version gating (≥2.0 for audio, ≥2.1 for noVideo) in src/components/settings-panels/AudioPanel.tsx
-- [ ] T036 [P] [US2] Add audio flags (--no-audio, --audio-codec, --audio-bit-rate, --audio-source=mic, --no-video) to command preview in src/utils/command-builder.ts
-- [ ] T037 [US2] Integrate AudioPanel into DeviceSettingsModal accordion as "Audio" section in src/components/DeviceSettingsModal.tsx
+- [x] T035 [P] [US2] Create audio forwarding toggle, audio codec dropdown (opus/aac/flac/raw), audio bitrate input, noAudio toggle, and noVideo toggle (FR-011) with version gating (≥2.0 for audio, ≥2.1 for noVideo) in src/components/settings-panels/AudioPanel.tsx
+- [x] T036 [P] [US2] Add audio flags (--no-audio, --audio-codec, --audio-bit-rate, --audio-source=mic, --no-video) to command preview in src/utils/command-builder.ts
+- [x] T037 [US2] Integrate AudioPanel into DeviceSettingsModal accordion as "Audio" section in src/components/DeviceSettingsModal.tsx
 
 **Checkpoint**: User Stories 1 AND 2 both work independently — input modes and audio forwarding can be configured and tested separately.
 
@@ -127,10 +127,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T038 [P] [US3] Create video source toggle (Display/Camera), camera facing dropdown, camera size input, camera ID input with version gating (≥2.2) and Android 12+ device gating in src/components/settings-panels/VideoSourcePanel.tsx
-- [ ] T039 [P] [US3] Add video source and camera flags (--video-source, --camera-facing, --camera-size, --camera-id) to command preview in src/utils/command-builder.ts
-- [ ] T040 [US3] Integrate VideoSourcePanel into DeviceSettingsModal accordion as "Video Source" section in src/components/DeviceSettingsModal.tsx
-- [ ] T041 [US3] Implement videoSource state transition: when camera selected, disable/grey displayId, crop, rotation fields in DisplayPanel via src/hooks/useDeviceSettings.ts
+- [x] T038 [P] [US3] Create video source toggle (Display/Camera), camera facing dropdown, camera size input, camera ID input with version gating (≥2.2) and Android 12+ device gating in src/components/settings-panels/VideoSourcePanel.tsx
+- [x] T039 [P] [US3] Add video source and camera flags (--video-source, --camera-facing, --camera-size, --camera-id) to command preview in src/utils/command-builder.ts
+- [x] T040 [US3] Integrate VideoSourcePanel into DeviceSettingsModal accordion as "Video Source" section in src/components/DeviceSettingsModal.tsx
+- [x] T041 [US3] Implement videoSource state transition: when camera selected, disable/grey displayId, crop, rotation fields in DisplayPanel via src/hooks/useDeviceSettings.ts
 
 **Checkpoint**: Camera mirroring fully functional — video source switching works with proper field disabling and command generation.
 
@@ -144,9 +144,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T042 [P] [US4] Create V4L2 enable toggle, device path selector (populated via invoke list_v4l2_devices), buffer size input, noPlayback toggle with Linux-only visibility (isLinux from platform.ts) in src/components/settings-panels/V4L2Panel.tsx
-- [ ] T043 [P] [US4] Add V4L2 flags (--v4l2-sink, --v4l2-buffer, --no-playback) to command preview in src/utils/command-builder.ts
-- [ ] T044 [US4] Integrate V4L2Panel into DeviceSettingsModal accordion as "V4L2 Virtual Webcam" section (Linux only) in src/components/DeviceSettingsModal.tsx
+- [x] T042 [P] [US4] Create V4L2 enable toggle, device path selector (populated via invoke list_v4l2_devices), buffer size input, noPlayback toggle with Linux-only visibility (isLinux from platform.ts) in src/components/settings-panels/V4L2Panel.tsx
+- [x] T043 [P] [US4] Add V4L2 flags (--v4l2-sink, --v4l2-buffer, --no-playback) to command preview in src/utils/command-builder.ts
+- [x] T044 [US4] Integrate V4L2Panel into DeviceSettingsModal accordion as "V4L2 Virtual Webcam" section (Linux only) in src/components/DeviceSettingsModal.tsx
 
 **Checkpoint**: V4L2 virtual webcam fully functional on Linux — device listing, path selection, and flag generation work end-to-end.
 
@@ -160,10 +160,10 @@
 
 ### Implementation for User Story 5
 
-- [ ] T045 [P] [US5] Create virtual display enable toggle, resolution input (WxH), DPI input, start app package name field with version gating (≥3.0) in src/components/settings-panels/VirtualDisplayPanel.tsx
-- [ ] T046 [P] [US5] Add virtual display flags (--new-display=WxH[/DPI], --start-app) to command preview in src/utils/command-builder.ts
-- [ ] T047 [US5] Integrate VirtualDisplayPanel into DeviceSettingsModal accordion as "Virtual Display" section in src/components/DeviceSettingsModal.tsx
-- [ ] T048 [US5] Implement virtualDisplay state transition: when enabled, disable/grey displayId field in DisplayPanel via src/hooks/useDeviceSettings.ts
+- [x] T045 [P] [US5] Create virtual display enable toggle, resolution input (WxH), DPI input, start app package name field with version gating (≥3.0) in src/components/settings-panels/VirtualDisplayPanel.tsx
+- [x] T046 [P] [US5] Add virtual display flags (--new-display=WxH[/DPI], --start-app) to command preview in src/utils/command-builder.ts
+- [x] T047 [US5] Integrate VirtualDisplayPanel into DeviceSettingsModal accordion as "Virtual Display" section in src/components/DeviceSettingsModal.tsx
+- [x] T048 [US5] Implement virtualDisplay state transition: when enabled, disable/grey displayId field in DisplayPanel via src/hooks/useDeviceSettings.ts
 
 **Checkpoint**: Virtual display fully functional — resolution, DPI, app launching, and displayId disabling work correctly.
 
@@ -177,9 +177,9 @@
 
 ### Implementation for User Story 6
 
-- [ ] T049 [P] [US6] Add OTG mode toggle with USB-only validation (disabled + tooltip for wireless devices) to device settings UI in src/components/DeviceSettingsModal.tsx
-- [ ] T050 [P] [US6] Add OTG flag (--otg) to command preview in src/utils/command-builder.ts
-- [ ] T051 [US6] Implement OTG state transition: when enabled, force videoSource=display, disable recording/noVideo/noAudio toggles, grey out all a/v panel controls per data-model.md state transitions in src/hooks/useDeviceSettings.ts
+- [x] T049 [P] [US6] Add OTG mode toggle with USB-only validation (disabled + tooltip for wireless devices) to device settings UI in src/components/DeviceSettingsModal.tsx
+- [x] T050 [P] [US6] Add OTG flag (--otg) to command preview in src/utils/command-builder.ts
+- [x] T051 [US6] Implement OTG state transition: when enabled, force videoSource=display, disable recording/noVideo/noAudio toggles, grey out all a/v panel controls per data-model.md state transitions in src/hooks/useDeviceSettings.ts
 
 **Checkpoint**: OTG mode fully functional — USB-only gating, incompatible option disabling, and clean command generation work correctly.
 
@@ -193,8 +193,8 @@
 
 ### Implementation for User Story 7
 
-- [ ] T052 [P] [US7] Add gamepad mode dropdown (Disabled/UHID/AOA) with version gating (≥2.7) to existing InputControlPanel in src/components/settings-panels/InputControlPanel.tsx
-- [ ] T053 [P] [US7] Add gamepad_mode flag generation (--gamepad=X when not "disabled") to command preview in src/utils/command-builder.ts
+- [x] T052 [P] [US7] Add gamepad mode dropdown (Disabled/UHID/AOA) with version gating (≥2.7) to existing InputControlPanel in src/components/settings-panels/InputControlPanel.tsx
+- [x] T053 [P] [US7] Add gamepad_mode flag generation (--gamepad=X when not "disabled") to command preview in src/utils/command-builder.ts
 
 **Checkpoint**: All 7 user stories now independently functional — gamepad forwarding extends the Input & Control panel created in US1.
 
@@ -204,12 +204,12 @@
 
 **Purpose**: Quality improvements that span multiple user stories, constitution compliance verification
 
-- [ ] T054 [P] Add window title text input (FR-010, --window-title) to src/components/settings-panels/WindowPanel.tsx
-- [ ] T055 [P] Add --window-title flag generation to command preview in src/utils/command-builder.ts
-- [ ] T056 Implement cross-panel incompatible option disabling with explanatory tooltips (FR-013): camera options hidden when videoSource=display, V4L2 hidden on non-Linux, audio controls disabled below Android 11, camera disabled below Android 12, in src/components/DeviceSettingsModal.tsx
-- [ ] T057 Migrate inline dark-theme styles from device settings modal JS to CSS custom properties in src/App.css
-- [ ] T058 Run quickstart.md validation for all 7 user stories per specs/001-scrcpy-options-gui/quickstart.md
-- [ ] T059 Code cleanup and dead code removal across src/ and src-tauri/src/
+- [x] T054 [P] Add window title text input (FR-010, --window-title) to src/components/settings-panels/WindowPanel.tsx
+- [x] T055 [P] Add --window-title flag generation to command preview in src/utils/command-builder.ts
+- [x] T056 Implement cross-panel incompatible option disabling with explanatory tooltips (FR-013): camera options hidden when videoSource=display, V4L2 hidden on non-Linux, audio controls disabled below Android 11, camera disabled below Android 12, in src/components/DeviceSettingsModal.tsx
+- [x] T057 Migrate inline dark-theme styles from device settings modal JS to CSS custom properties in src/App.css
+- [x] T058 Run quickstart.md validation for all 7 user stories per specs/001-scrcpy-options-gui/quickstart.md
+- [x] T059 Code cleanup and dead code removal across src/ and src-tauri/src/
 
 ---
 

@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Rust / Tauri
+src-tauri/target/
+*.rs.bk
+
+# Environment
+.env*
+!.env.example
+
+# OS
+Thumbs.db
+*.tmp

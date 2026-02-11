@@ -25,3 +25,4 @@ serde_json = "1"
 tokio = { version = "1", features = ["process", "full"] }
 rfd = { version = "0.16", features = ["xdg-portal"] }
 lazy_static = "1.4"
+tauri-plugin-os = "2.3.2"
