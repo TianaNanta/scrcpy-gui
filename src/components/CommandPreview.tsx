@@ -43,6 +43,7 @@ export default function CommandPreview({ command }: CommandPreviewProps) {
         <strong>Generated Command:</strong>
         <button
           onClick={copyToClipboard}
+          aria-label="Copy command"
           style={{
             backgroundColor: "#333",
             color: "white",
@@ -57,6 +58,9 @@ export default function CommandPreview({ command }: CommandPreviewProps) {
         </button>
       </div>
       <code style={{ wordBreak: "break-all" }}>{command}</code>
+      <span aria-live="polite" className="sr-only">
+        {copied ? "Command copied to clipboard" : ""}
+      </span>
     </div>
   );
 }

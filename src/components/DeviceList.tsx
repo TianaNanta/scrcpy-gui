@@ -86,6 +86,7 @@ export default function DeviceList({
           value={deviceSearch}
           onChange={(e) => onSearchChange(e.target.value)}
           className="input"
+          aria-label="Search devices"
         />
         <div className="device-filters">
           {([
@@ -97,6 +98,7 @@ export default function DeviceList({
               key={key}
               className={`btn device-filter-btn ${deviceFilter === key ? "active" : ""}`}
               onClick={() => onFilterChange(key)}
+              aria-pressed={deviceFilter === key}
             >
               <Icon className="btn-icon" />
               {label} ({count})
@@ -124,6 +126,15 @@ export default function DeviceList({
                 key={d.serial}
                 className={`device-card ${d.status === "device" ? "online" : "offline"}`}
                 onDoubleClick={() => onOpenDeviceSettings(d.serial)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Configure ${deviceNames.get(d.serial) || d.model || d.serial}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpenDeviceSettings(d.serial);
+                  }
+                }}
               >
                 <div className="device-header">
                   <div className="device-serial">{deviceNames.get(d.serial) || d.serial}</div>
@@ -145,6 +156,7 @@ export default function DeviceList({
                       onClick={() => onDisconnectWireless(d.serial)}
                       disabled={wirelessConnecting}
                       title="Delete wireless connection"
+                      aria-label={`Delete wireless connection for ${deviceNames.get(d.serial) || d.serial}`}
                     >
                       <TrashIcon className="btn-icon" />
                     </button>
@@ -175,6 +187,15 @@ export default function DeviceList({
             className="device-card pair-new-device"
             style={{ border: "2px dashed var(--border-color)" }}
             onClick={onOpenPairModal}
+            tabIndex={0}
+            role="button"
+            aria-label="Pair new device"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenPairModal();
+              }
+            }}
           >
             <div className="device-header">
               <div className="device-serial" style={{ display: "flex", alignItems: "center" }}>

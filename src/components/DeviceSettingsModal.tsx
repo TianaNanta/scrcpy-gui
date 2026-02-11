@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { Device } from "../types/device";
 import type { DeviceSettings } from "../types/settings";
 import { buildCommandPreview } from "../utils/command-builder";
@@ -48,6 +48,43 @@ export default function DeviceSettingsModal({
   onLaunch,
 }: DeviceSettingsModalProps) {
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set());
+  const modalRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+
+  useEffect(() => {
+    triggerRef.current = document.activeElement;
+    const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable?.focus();
+    return () => {
+      (triggerRef.current as HTMLElement)?.focus?.();
+    };
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    },
+    [onClose],
+  );
 
   const togglePanel = useCallback(
     (panel: string) => {
@@ -71,6 +108,11 @@ export default function DeviceSettingsModal({
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="device-settings-title"
+        onKeyDown={handleKeyDown}
         style={{
           backgroundColor: "#0f0f14",
           color: "white",
@@ -88,7 +130,7 @@ export default function DeviceSettingsModal({
           }}
         >
           <div>
-            <h3 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>
+            <h3 id="device-settings-title" style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>
               {deviceName || device?.model || serial}
             </h3>
             <p style={{ margin: "0.5rem 0", color: "#b0b0b0", fontSize: "0.9rem" }}>
@@ -114,6 +156,7 @@ export default function DeviceSettingsModal({
             <button
               className="modal-close"
               onClick={onClose}
+              aria-label="Close"
               style={{
                 color: "white",
                 background: "none",

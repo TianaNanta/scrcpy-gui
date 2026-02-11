@@ -14,13 +14,18 @@ monolithic `App.tsx` into discrete components, and capturing scrcpy stderr for
 error reporting. The approach adds features incrementally by user story priority
 while restructuring the codebase for maintainability per constitution principles.
 
+Additionally, all new and existing interactive components must meet the
+constitution's keyboard accessibility mandate (III-6). This requires adding ARIA
+semantics, focus management, and keyboard navigation patterns across the
+component tree.
+
 ## Technical Context
 
 **Language/Version**: TypeScript ~5.6 (strict mode) + Rust 1.93 (edition 2021)
 **Primary Dependencies**: Tauri 2.x, React 18.3, Vite 6.x, tokio 1.x, serde 1.x, rfd 0.16
 **Package Manager**: Bun 1.3.9
 **Storage**: `localStorage` (frontend) — no database, no Tauri store plugin
-**Testing**: `cargo test` (Rust), Vitest (to add for frontend — currently no frontend tests)
+**Testing**: `cargo test` (Rust), Vitest (frontend — jsdom environment)
 **Target Platform**: Linux primary (constitution), cross-platform via Tauri
 **Project Type**: Desktop app (Tauri = Rust backend + React frontend)
 **Performance Goals**: <3s cold start, <2s device refresh, <100ms settings preview update, <500KB gzipped frontend bundle
@@ -58,6 +63,7 @@ while restructuring the codebase for maintainability per constitution principles
 | Actionable errors | ⚠️ VIOLATION | scrcpy stderr is not captured — `Stdio::inherit()`. Must fix |
 | Theme support | ⚠️ VIOLATION | Device settings modal has hardcoded dark-theme inline styles |
 | Responsive layout | ✅ PASS | Existing CSS handles 800px+ |
+| Keyboard accessibility (III-6) | ⚠️ VIOLATION | Zero ARIA attributes, no focus traps in modals, panel headers are non-focusable divs, device cards unreachable by keyboard, no `aria-expanded`/`aria-selected`, no `:focus-visible` styles |
 
 ### Principle IV — Performance Requirements
 
@@ -79,6 +85,7 @@ while restructuring the codebase for maintainability per constitution principles
 | Inline dark-theme styles | III | Extract to CSS custom properties |
 | 50 `useState` in one component | IV | Move to extracted components with local state |
 | scrcpy stderr not captured | III | Capture via `Stdio::piped()` and stream to frontend |
+| Zero keyboard accessibility | III-6 | Add ARIA semantics, focus traps, keyboard handlers, `:focus-visible` styles |
 
 **GATE RESULT**: PASS WITH CONDITIONS — Violations are pre-existing and will be resolved as part of this feature implementation. No new violations introduced.
 
@@ -93,6 +100,7 @@ while restructuring the codebase for maintainability per constitution principles
 | Inline dark-theme styles | New components use CSS custom properties; existing modal to be migrated | ✅ ADDRESSED |
 | 50 `useState` in one component | Split into 3 React Contexts with `useReducer` ([research.md](research.md) R6) | ✅ RESOLVED |
 | scrcpy stderr not captured | `scrcpy-log` event contract defined in [contracts](contracts/tauri-commands.md) | ✅ RESOLVED |
+| Zero keyboard accessibility | Accessibility patterns defined in [research.md](research.md) R7, requirements mapped to components in Keyboard Accessibility section | ✅ RESOLVED |
 
 **POST-DESIGN GATE**: ✅ PASS — All pre-existing violations have design-level resolutions. No new violations introduced.
 
@@ -115,16 +123,16 @@ specs/001-scrcpy-options-gui/
 ```text
 src/
 ├── App.tsx                          # Slim shell: sidebar + router only
-├── App.css                          # Global CSS custom properties + theme
+├── App.css                          # Global CSS custom properties + theme + focus styles
 ├── main.tsx                         # Entry point (unchanged)
 ├── types/
 │   ├── device.ts                    # Device, DeviceHealth interfaces
 │   ├── settings.ts                  # DeviceSettings, Preset interfaces
 │   └── scrcpy.ts                    # ScrcpyConfig, enums (KeyboardMode, etc.)
 ├── components/
-│   ├── Sidebar.tsx                  # Tab navigation
+│   ├── Sidebar.tsx                  # Tab navigation (role=tablist + arrow keys)
 │   ├── DeviceList.tsx               # Device cards with search/filter
-│   ├── DeviceSettingsModal.tsx       # Settings modal shell + accordion
+│   ├── DeviceSettingsModal.tsx       # Settings modal shell + accordion (focus trap + ESC)
 │   ├── settings-panels/
 │   │   ├── InputControlPanel.tsx    # US1: keyboard, mouse, gamepad modes
 │   │   ├── AudioPanel.tsx           # US2: audio forwarding, codec, bitrate
@@ -141,11 +149,11 @@ src/
 │   ├── PresetManager.tsx            # Presets tab content
 │   ├── LogViewer.tsx                # Logs tab content
 │   ├── SettingsPage.tsx             # Settings tab content
-│   └── PairDeviceModal.tsx          # USB/wireless pairing modal
+│   └── PairDeviceModal.tsx          # USB/wireless pairing modal (focus trap + ESC)
 ├── hooks/
 │   ├── useDeviceSettings.ts         # Per-device settings state + persistence
 │   ├── useScrcpyProcess.ts          # Start/stop/stderr capture
-│   └── useScrcpyVersion.ts          # Version detection + feature gating
+│   └── useScrcpyVersion.ts         # Version detection + feature gating
 ├── utils/
 │   ├── command-builder.ts           # Single source of truth for command string
 │   └── platform.ts                  # OS detection helpers
@@ -173,9 +181,72 @@ This is the existing project structure evolved with component decomposition. The
 monolithic `App.tsx` is split into ~20 focused files. Rust commands are extracted
 from the single `lib.rs` into domain modules.
 
+## Keyboard Accessibility Design
+
+### Constitution III-6 Requirements
+
+> "Keyboard accessibility MUST be maintained for all interactive elements;
+> tab order MUST follow visual layout."
+
+### Current State (Audit Findings)
+
+- **Zero ARIA attributes** across the entire component tree
+- **11 panel headers** are `<div onClick>` — keyboard-inaccessible
+- **DeviceSettingsModal**: no `role="dialog"`, no focus trap, no ESC-to-close, no focus restoration
+- **PairDeviceModal**: same gaps as DeviceSettingsModal
+- **Device cards**: `<div onDoubleClick>` — unreachable by keyboard
+- **Sidebar tabs**: `<button>` elements (focusable) but no `role="tablist"` / `role="tab"` / `aria-selected`
+- **Search input**: no `<label>` or `aria-label`
+- **Icon-only buttons** (delete, refresh, close): `title` but no `aria-label`
+- **No `:focus-visible` styles**; `outline: none` with subtle box-shadow replacements
+- **Only 1 keyboard handler** in entire codebase (PresetManager Enter-to-save)
+
+### Design Decisions
+
+1. **Panel headers**: Convert `<div onClick>` to `<button>` with `aria-expanded={isOpen}`. Native `<button>` gives keyboard focus + Enter/Space activation for free. No `tabIndex` hacking needed.
+
+2. **Modals (DeviceSettingsModal, PairDeviceModal)**:
+   - Add `role="dialog"` + `aria-modal="true"` + `aria-labelledby` pointing to heading
+   - Add `onKeyDown` handler for `Escape` → close
+   - Add focus trap: on open, focus first interactive element; on Tab past last element, wrap to first; on Shift+Tab past first, wrap to last
+   - On close, restore focus to the element that opened the modal (store via `useRef`)
+
+3. **Device cards**: Add `tabIndex={0}` + `role="button"` + `aria-label` (e.g., "Configure Pixel 7") + `onKeyDown` for Enter/Space → open settings. "Pair New Device" card: same treatment.
+
+4. **Sidebar**: Add `role="tablist"` to container, `role="tab"` + `aria-selected` to each button, `role="tabpanel"` to content area. Add arrow key navigation (Up/Down to move between tabs, Home/End for first/last).
+
+5. **Icon-only buttons**: Add `aria-label` to close (×), delete (🗑), refresh (↻) buttons.
+
+6. **Search input**: Add `aria-label="Search devices"` (no visible label needed since the placeholder is descriptive and the control is singular).
+
+7. **Disabled controls with tooltips**: Ensure `aria-describedby` points to the tooltip text explaining why the control is disabled, so screen readers announce the reason.
+
+8. **Focus styles in App.css**:
+   - Add `.sr-only` utility class for screen-reader-only text
+   - Replace `:focus` styles with `:focus-visible` to avoid flash on mouse click
+   - Ensure focus ring has ≥3:1 contrast ratio against background (use `outline: 2px solid var(--color-focus-ring)` with a CSS custom property)
+   - Add `:focus-visible` styles for: `.sidebar-tab`, `.device-card`, `.panel-header button`, `.modal-close`, all buttons
+
+9. **No external dependencies**: All accessibility is achievable with native HTML semantics, ARIA attributes, and vanilla React event handlers. No focus-trap library needed — manual trap in modals is ~15 lines of code.
+
+### Component-Level Requirements
+
+| Component | Changes Required |
+|-----------|-----------------|
+| **App.css** | Add `.sr-only` class; add `--color-focus-ring` CSS variable; replace `:focus` with `:focus-visible` for inputs/selects; add `:focus-visible` for buttons, sidebar tabs, panel headers, device cards, modal close |
+| **Sidebar.tsx** | Add `role="tablist"` to nav, `role="tab"` + `aria-selected` to buttons, `onKeyDown` for arrow/Home/End navigation |
+| **DeviceList.tsx** | Device cards: `tabIndex={0}` + `role="button"` + `aria-label` + `onKeyDown` (Enter/Space). "Pair" card: same. Search: `aria-label`. Filter buttons: `aria-pressed`. Delete: `aria-label` |
+| **DeviceSettingsModal.tsx** | `role="dialog"` + `aria-modal` + `aria-labelledby`; focus trap + ESC handler + focus restore |
+| **PairDeviceModal.tsx** | Same as DeviceSettingsModal |
+| **All 11 settings panels** | Panel header: convert wrapping div to `<button>` with `aria-expanded`; tooltip-gated disabled controls: `aria-describedby` |
+| **CommandPreview.tsx** | Copy button: add `aria-label="Copy command"` + live region feedback (`aria-live="polite"` "Copied!") |
+| **PresetManager.tsx** | Already has Enter-to-save; add `aria-label` to icon buttons |
+| **LogViewer.tsx** | Log output: `role="log"` + `aria-live="polite"` for new entries |
+
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | 11 settings panels | Each panel maps 1:1 to a scrcpy feature group; keeps components ≤50 lines | Fewer panels would create ≥100-line components violating constitution |
 | `commands/` submodule in Rust | Current lib.rs is 461 lines and will grow to 800+ with new commands | Single file violates the 50-line function principle when adding version detection, stderr capture, V4L2 listing |
+| Modal focus trap code | Constitution III-6 requires keyboard accessibility; focus traps keep modal navigation correct | External focus-trap library rejected per constitution dependency policy — manual implementation is ~15 lines |

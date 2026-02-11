@@ -27,6 +27,7 @@ export default function PresetManager({
             type="text"
             placeholder="Preset name"
             className="input"
+            aria-label="Preset name"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const input = e.target as HTMLInputElement;
@@ -55,7 +56,7 @@ export default function PresetManager({
             <div key={preset.id} className="preset-item">
               <span>{preset.name}</span>
               <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button className="btn btn-secondary" onClick={() => onLoadPreset(preset)}>
+                <button className="btn btn-secondary" onClick={() => onLoadPreset(preset)} aria-label={`Load preset ${preset.name}`}>
                   Load
                 </button>
                 {onDeletePreset && (
@@ -63,6 +64,7 @@ export default function PresetManager({
                     className="btn btn-secondary"
                     onClick={() => onDeletePreset(preset.id)}
                     style={{ color: "#ef4444" }}
+                    aria-label={`Delete preset ${preset.name}`}
                   >
                     Delete
                   </button>

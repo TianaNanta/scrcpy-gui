@@ -85,6 +85,7 @@ A user wants to open apps on a separate virtual display that doesn't affect the 
 1. **Given** device settings open, **When** the user enables "Virtual Display" and sets resolution to "1920x1080," **Then** the command preview shows `--new-display=1920x1080`.
 2. **Given** virtual display enabled with start app set to "org.videolan.vlc," **When** the user starts scrcpy, **Then** the command includes `--new-display=1920x1080 --start-app=org.videolan.vlc`.
 3. **Given** virtual display is disabled, **When** the user starts scrcpy, **Then** no `--new-display` or `--start-app` flags are included.
+4. **Given** virtual display enabled with resolution "1920x1080" and DPI set to 240, **When** the user starts scrcpy, **Then** the command includes `--new-display=1920x1080/240`.
 
 ---
 
@@ -133,7 +134,7 @@ A user plugs a gamepad into their computer and wants to use it to control games 
 - **FR-001**: System MUST provide a keyboard input mode selector with options: Default, SDK (software), UHID (physical), AOA (physical).
 - **FR-002**: System MUST provide a mouse input mode selector with options: Default, SDK, UHID, AOA, Disabled.
 - **FR-003**: System MUST provide a visible audio forwarding toggle in the device settings panel with codec and bitrate controls.
-- **FR-004**: System MUST provide a "No Audio" explicit toggle that adds `--no-audio` when disabled.
+- **FR-004**: System MUST provide a "No Audio" toggle; when enabled, adds `--no-audio` to the command. When both `audioForwarding` (FR-003) and `noAudio` are set, `noAudio` takes precedence.
 - **FR-005**: System MUST provide a video source selector (Display or Camera) with camera-specific options: facing (front/back/external), camera size, and camera ID.
 - **FR-006**: System MUST provide a V4L2 sink section (Linux only) with device path input, buffer size, and a "No Playback" toggle.
 - **FR-007**: System MUST provide a virtual display section with resolution input and an optional "Start App" package name field.
@@ -169,7 +170,7 @@ A user plugs a gamepad into their computer and wants to use it to control games 
 
 ## Assumptions
 
-- The user has scrcpy v2.0+ installed (audio forwarding requires v2.0+, camera requires v2.1+, virtual display requires v2.7+). The GUI will detect the version and gate features accordingly.
+- The user has scrcpy v2.0+ installed (audio forwarding requires v2.0+, camera requires v2.2+, virtual display requires v3.0+). The GUI will detect the version and gate features accordingly.
 - V4L2 support is Linux-only; the GUI hides this section on other platforms. Since the app's primary target is Linux per the constitution, this is a first-class feature.
 - OTG mode only works with USB connections; wirelessly connected devices cannot use OTG.
 - Camera mirroring requires Android 12+ (API 31); the GUI disables camera options for older devices.
