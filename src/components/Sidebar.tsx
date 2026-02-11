@@ -1,0 +1,85 @@
+import {
+  DevicePhoneMobileIcon,
+  DocumentTextIcon,
+  Bars3Icon,
+  AdjustmentsHorizontalIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
+import type { Dependencies } from "../types/device";
+
+export type Tab = "devices" | "presets" | "logs" | "settings";
+
+const tabs: { id: Tab; name: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }[] = [
+  { id: "devices", name: "Devices", icon: DevicePhoneMobileIcon },
+  { id: "presets", name: "Presets", icon: DocumentTextIcon },
+  { id: "logs", name: "Logs", icon: Bars3Icon },
+  { id: "settings", name: "Settings", icon: AdjustmentsHorizontalIcon },
+];
+
+interface SidebarProps {
+  currentTab: Tab;
+  onTabChange: (tab: Tab) => void;
+  dependencies: Dependencies | null;
+  onRefreshDeps: () => void;
+}
+
+export default function Sidebar({
+  currentTab,
+  onTabChange,
+  dependencies,
+  onRefreshDeps,
+}: SidebarProps) {
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <DevicePhoneMobileIcon className="sidebar-logo" />
+        <div className="sidebar-title">
+          <h2>Scrcpy GUI</h2>
+          <span className="sidebar-version">v0.3.0</span>
+        </div>
+      </div>
+      <nav className="sidebar-nav">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              className={`sidebar-tab ${currentTab === tab.id ? "active" : ""}`}
+              onClick={() => onTabChange(tab.id)}
+            >
+              <Icon className="sidebar-icon" />
+              {tab.name}
+            </button>
+          );
+        })}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="dependency-status">
+          <div className="dependency-item">
+            <span className="dependency-label">ADB:</span>
+            <span
+              className={`dependency-status ${dependencies?.adb ? "ready" : "not-ready"}`}
+            >
+              {dependencies?.adb ? "✓" : "✗"}
+            </span>
+          </div>
+          <div className="dependency-item">
+            <span className="dependency-label">Scrcpy:</span>
+            <span
+              className={`dependency-status ${dependencies?.scrcpy ? "ready" : "not-ready"}`}
+            >
+              {dependencies?.scrcpy ? "✓" : "✗"}
+            </span>
+          </div>
+        </div>
+        <button
+          className="btn btn-secondary refresh-btn"
+          onClick={onRefreshDeps}
+          title="Refresh dependency status"
+        >
+          <ArrowPathIcon className="btn-icon" />
+        </button>
+      </div>
+    </aside>
+  );
+}

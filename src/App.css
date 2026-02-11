@@ -918,3 +918,75 @@ header.devices-header {
 }
 
 /* Settings */
+
+/* ─── Settings Panel Shared Styles ──────────────────────────────────────── */
+
+.settings-panel {
+    margin-bottom: 1rem;
+}
+
+.panel-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #333;
+}
+
+.panel-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.panel-content {
+    padding: 1rem 0;
+}
+
+.panel-content .row {
+    margin-bottom: 1rem;
+}
+
+.panel-content .input-label {
+    color: white;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.panel-content .checkbox-label {
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+.panel-content input[type="text"],
+.panel-content input[type="number"],
+.panel-content select {
+    background-color: #1e1e2e;
+    color: white;
+    border: 1px solid #333;
+    padding: 0.5rem;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.panel-content input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.panel-content .hint {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.panel-content .version-warning {
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    background-color: #1e1e2e;
+    border-radius: 4px;
+    border: 1px solid #555;
+    font-size: 0.85rem;
+    color: #f59e0b;
+}
