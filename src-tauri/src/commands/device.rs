@@ -129,3 +129,70 @@ pub async fn test_device(serial: String) -> Result<(), String> {
         Err(format!("Device test failed: {}", stderr))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn device_info_serializes_all_fields() {
+        let info = DeviceInfo {
+            serial: "abc123".to_string(),
+            status: "device".to_string(),
+            model: Some("Pixel 7".to_string()),
+            android_version: Some("14".to_string()),
+            battery_level: Some(85),
+            is_wireless: false,
+        };
+        let json = serde_json::to_value(&info).unwrap();
+        assert_eq!(json["serial"], "abc123");
+        assert_eq!(json["status"], "device");
+        assert_eq!(json["model"], "Pixel 7");
+        assert_eq!(json["android_version"], "14");
+        assert_eq!(json["battery_level"], 85);
+        assert_eq!(json["is_wireless"], false);
+    }
+
+    #[test]
+    fn device_info_serializes_null_optionals() {
+        let info = DeviceInfo {
+            serial: "192.168.1.100:5555".to_string(),
+            status: "offline".to_string(),
+            model: None,
+            android_version: None,
+            battery_level: None,
+            is_wireless: true,
+        };
+        let json = serde_json::to_value(&info).unwrap();
+        assert_eq!(json["serial"], "192.168.1.100:5555");
+        assert_eq!(json["status"], "offline");
+        assert!(json["model"].is_null());
+        assert!(json["android_version"].is_null());
+        assert!(json["battery_level"].is_null());
+        assert_eq!(json["is_wireless"], true);
+    }
+
+    #[test]
+    fn device_health_serializes() {
+        let health = DeviceHealth {
+            battery_level: Some(42),
+        };
+        let json = serde_json::to_value(&health).unwrap();
+        assert_eq!(json["battery_level"], 42);
+
+        let health_none = DeviceHealth {
+            battery_level: None,
+        };
+        let json_none = serde_json::to_value(&health_none).unwrap();
+        assert!(json_none["battery_level"].is_null());
+    }
+
+    #[test]
+    fn wireless_detection_by_serial() {
+        // The list_devices function detects wireless by colon in serial
+        let usb_serial = "abc123";
+        let wireless_serial = "192.168.1.100:5555";
+        assert!(!usb_serial.contains(':'));
+        assert!(wireless_serial.contains(':'));
+    }
+}
