@@ -38,8 +38,10 @@ describe("NetworkPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<NetworkPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("No Cleanup")).not.toBeInTheDocument();
+    const { container } = render(<NetworkPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("renders audio codec dropdown", () => {

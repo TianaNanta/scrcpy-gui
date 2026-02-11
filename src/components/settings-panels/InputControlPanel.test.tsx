@@ -40,8 +40,10 @@ describe("InputControlPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<InputControlPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Keyboard Mode:")).not.toBeInTheDocument();
+    const { container } = render(<InputControlPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows all input mode labels when expanded", () => {

@@ -31,80 +31,53 @@ export default function RecordingPanel({
   };
 
   return (
-    <div className="settings-panel" style={{ marginBottom: "1rem" }}>
+    <div className="settings-panel">
       <button
-        className="panel-header"
+        className={`panel-header${expanded ? ' expanded' : ''}`}
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <h4 style={{ margin: 0, fontSize: "1.1rem" }}>Recording</h4>
-        <ChevronDownIcon
-          style={{
-            width: "1rem",
-            height: "1rem",
-            transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s",
-          }}
-        />
+        <h4>Recording</h4>
+        <ChevronDownIcon />
       </button>
-      {expanded && (
-        <div className="panel-content" style={{ padding: "1rem 0" }}>
-          <div className="row" style={{ marginBottom: "1rem" }}>
+      <div className={`panel-content${expanded ? ' expanded' : ''}`} aria-hidden={!expanded}>
+          <div className="row">
             <label
               className="checkbox-label"
-              style={{ color: "white", display: "flex", alignItems: "center" }}
             >
               <input
                 type="checkbox"
                 checked={settings.recordingEnabled}
                 onChange={(e) => onSettingsChange({ recordingEnabled: e.target.checked })}
-                style={{ marginRight: "0.5rem" }}
               />
               Enable Recording
             </label>
           </div>
           {settings.recordingEnabled && (
             <>
-              <div className="row" style={{ marginBottom: "1rem" }}>
+              <div className="row">
                 <label
                   className="input-label"
-                  style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
                 >
                   Output Filename:
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <div className="input-with-button">
                     <input
                       type="text"
                       value={settings.recordFile}
                       onChange={(e) => onSettingsChange({ recordFile: e.target.value })}
-                      style={{
-                        backgroundColor: "#1e1e2e",
-                        color: "white",
-                        border: "1px solid #333",
-                        padding: "0.5rem",
-                        borderRadius: "4px",
-                        flex: 1,
-                      }}
                     />
                     <button
                       onClick={selectSaveFile}
-                      style={{
-                        backgroundColor: "#333",
-                        color: "white",
-                        border: "1px solid #555",
-                        padding: "0.5rem",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
+                      className="browse-button"
                     >
                       Browse
                     </button>
                   </div>
                 </label>
               </div>
-              <div className="row" style={{ marginBottom: "1rem" }}>
+              <div className="row">
                 <label
                   className="input-label"
-                  style={{ color: "white", display: "block", marginBottom: "0.5rem" }}
                 >
                   Container format:
                   <select
@@ -112,14 +85,6 @@ export default function RecordingPanel({
                     onChange={(e) =>
                       onSettingsChange({ recordFormat: e.target.value as "mp4" | "mkv" })
                     }
-                    style={{
-                      backgroundColor: "#1e1e2e",
-                      color: "white",
-                      border: "1px solid #333",
-                      padding: "0.5rem",
-                      borderRadius: "4px",
-                      width: "100%",
-                    }}
                   >
                     <option value="mp4">MP4</option>
                     <option value="mkv">MKV</option>
@@ -128,8 +93,7 @@ export default function RecordingPanel({
               </div>
             </>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

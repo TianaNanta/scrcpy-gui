@@ -6,6 +6,7 @@ import {
   ComputerDesktopIcon,
   WifiIcon,
   TrashIcon,
+  DevicePhoneMobileIcon,
 } from "@heroicons/react/24/outline";
 import type { Device, Dependencies } from "../types/device";
 import type { LogEntry } from "../types/settings";
@@ -16,6 +17,7 @@ interface DeviceListProps {
   activeDevices: string[];
   deviceNames: Map<string, string>;
   loading: boolean;
+  refreshing: boolean;
   wirelessConnecting: boolean;
   deviceSearch: string;
   deviceFilter: "all" | "usb" | "wireless";
@@ -36,6 +38,7 @@ export default function DeviceList({
   activeDevices,
   deviceNames,
   loading,
+  refreshing,
   wirelessConnecting,
   deviceSearch,
   deviceFilter,
@@ -69,9 +72,9 @@ export default function DeviceList({
           <p className="devices-subtitle">Manage and mirror your Android endpoints</p>
         </div>
         <div className="devices-actions">
-          <button className="btn btn-secondary" onClick={onRefreshDevices}>
-            <ArrowPathIcon className="btn-icon" />
-            Refresh List
+          <button className="btn btn-secondary" onClick={onRefreshDevices} disabled={refreshing}>
+            <ArrowPathIcon className={`btn-icon${refreshing ? " spin" : ""}`} />
+            {refreshing ? "Refreshing..." : "Refresh List"}
           </button>
           <button className="btn btn-primary" onClick={() => onStartScrcpy()}>
             Quick Start
@@ -108,20 +111,50 @@ export default function DeviceList({
       </div>
 
       <section className="section">
-        <div className="devices-list">
-          {devices
-            .filter((d) => {
-              const matchesSearch =
-                deviceSearch === "" ||
-                d.serial.toLowerCase().includes(deviceSearch.toLowerCase()) ||
-                (d.model && d.model.toLowerCase().includes(deviceSearch.toLowerCase()));
-              const matchesFilter =
-                deviceFilter === "all" ||
-                (deviceFilter === "usb" && !d.is_wireless) ||
-                (deviceFilter === "wireless" && d.is_wireless);
-              return matchesSearch && matchesFilter;
-            })
-            .map((d) => (
+        {(() => {
+          const filteredDevices = devices.filter((d) => {
+            const matchesSearch =
+              deviceSearch === "" ||
+              d.serial.toLowerCase().includes(deviceSearch.toLowerCase()) ||
+              (d.model && d.model.toLowerCase().includes(deviceSearch.toLowerCase()));
+            const matchesFilter =
+              deviceFilter === "all" ||
+              (deviceFilter === "usb" && !d.is_wireless) ||
+              (deviceFilter === "wireless" && d.is_wireless);
+            return matchesSearch && matchesFilter;
+          });
+
+          if (loading && devices.length === 0) {
+            return (
+              <div className="devices-list fade-enter">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="device-card skeleton-card">
+                    <div className="skeleton-line medium" />
+                    <div className="skeleton-line short" />
+                    <div className="skeleton-line long" />
+                  </div>
+                ))}
+              </div>
+            );
+          }
+
+          if (filteredDevices.length === 0 && devices.length === 0) {
+            return (
+              <div className="device-list-empty">
+                <DevicePhoneMobileIcon />
+                <h3>No devices connected</h3>
+                <p>Connect a device via USB or pair wirelessly to get started</p>
+                <button className="btn btn-primary" onClick={onOpenPairModal}>
+                  <PlusIcon className="btn-icon" />
+                  Pair New Device
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="devices-list fade-enter">
+              {filteredDevices.map((d) => (
               <div
                 key={d.serial}
                 className={`device-card ${d.status === "device" ? "online" : "offline"}`}
@@ -141,7 +174,10 @@ export default function DeviceList({
                   <div className="device-status">
                     <span className={`status-dot ${d.status === "device" ? "online" : "offline"}`} />
                     {d.status}
-                    {d.is_wireless && <WifiIcon className="wireless-icon" />}
+                    <span className={`connection-badge ${d.is_wireless ? "wireless" : "usb"}`}>
+                      {d.is_wireless ? <WifiIcon /> : <ComputerDesktopIcon />}
+                      {d.is_wireless ? "Wi-Fi" : "USB"}
+                    </span>
                   </div>
                 </div>
                 <div className="device-info">
@@ -185,7 +221,6 @@ export default function DeviceList({
             ))}
           <div
             className="device-card pair-new-device"
-            style={{ border: "2px dashed var(--border-color)" }}
             onClick={onOpenPairModal}
             tabIndex={0}
             role="button"
@@ -198,8 +233,8 @@ export default function DeviceList({
             }}
           >
             <div className="device-header">
-              <div className="device-serial" style={{ display: "flex", alignItems: "center" }}>
-                <PlusIcon style={{ width: "1.5rem", height: "1.5rem", marginRight: "0.5rem" }} />
+              <div className="device-serial pair-new-device-label">
+                <PlusIcon className="pair-new-device-icon" />
                 Pair New Device
               </div>
             </div>
@@ -208,6 +243,8 @@ export default function DeviceList({
             </div>
           </div>
         </div>
+          );
+        })()}
       </section>
 
       <section className="section">

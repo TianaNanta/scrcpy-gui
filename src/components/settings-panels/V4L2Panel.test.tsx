@@ -43,8 +43,10 @@ describe("V4L2Panel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<V4L2Panel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("V4L2 Sink Device:")).not.toBeInTheDocument();
+    const { container } = render(<V4L2Panel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("has aria-expanded attribute on header", () => {

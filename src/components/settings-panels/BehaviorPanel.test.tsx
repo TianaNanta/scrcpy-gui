@@ -37,9 +37,11 @@ describe("BehaviorPanel", () => {
     expect(defaultProps.onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it("does not show content when collapsed", () => {
-    render(<BehaviorPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Stay Awake")).not.toBeInTheDocument();
+  it("hides content when collapsed", () => {
+    const { container } = render(<BehaviorPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows all checkboxes when expanded", () => {

@@ -41,8 +41,10 @@ describe("RecordingPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<RecordingPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Enable Recording")).not.toBeInTheDocument();
+    const { container } = render(<RecordingPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("has aria-expanded attribute on header", () => {

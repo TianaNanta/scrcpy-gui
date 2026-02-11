@@ -113,43 +113,27 @@ export default function DeviceSettingsModal({
         aria-modal="true"
         aria-labelledby="device-settings-title"
         onKeyDown={handleKeyDown}
-        style={{
-          backgroundColor: "#0f0f14",
-          color: "white",
-          maxWidth: "800px",
-          width: "90%",
-        }}
       >
-        <div
-          className="modal-header"
-          style={{
-            backgroundColor: "#0f0f14",
-            color: "white",
-            padding: "1.5rem",
-            borderBottom: "1px solid #333",
-          }}
-        >
+        <div className="modal-header">
           <div>
-            <h3 id="device-settings-title" style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>
+            <h3 id="device-settings-title">
               {deviceName || device?.model || serial}
             </h3>
-            <p style={{ margin: "0.5rem 0", color: "#b0b0b0", fontSize: "0.9rem" }}>
+            <p className="modal-device-meta">
               {device?.is_wireless ? serial : "USB"} • Android{" "}
               {device?.android_version || "Unknown"}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <div className="modal-header-actions">
             <button
               className="btn btn-secondary"
               onClick={() => navigator.clipboard.writeText(generatedCommand)}
-              style={{ backgroundColor: "#333", color: "white", border: "1px solid #555" }}
             >
               Copy Command
             </button>
             <button
               className="btn btn-primary"
               onClick={onLaunch}
-              style={{ backgroundColor: "#007bff", color: "white" }}
             >
               Launch Mirroring
             </button>
@@ -157,22 +141,12 @@ export default function DeviceSettingsModal({
               className="modal-close"
               onClick={onClose}
               aria-label="Close"
-              style={{
-                color: "white",
-                background: "none",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-              }}
             >
               ×
             </button>
           </div>
         </div>
-        <div
-          className="modal-body"
-          style={{ backgroundColor: "#0f0f14", color: "white", padding: "1.5rem" }}
-        >
+        <div className="modal-body">
           <VideoSourcePanel
             settings={settings}
             onSettingsChange={onSettingsChange}

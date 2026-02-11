@@ -26,38 +26,18 @@ export default function CommandPreview({ command }: CommandPreviewProps) {
   };
 
   return (
-    <div
-      className="generated-command"
-      style={{
-        marginTop: "2rem",
-        padding: "1rem",
-        backgroundColor: "#1e1e2e",
-        borderRadius: "4px",
-        fontFamily: "monospace",
-        color: "white",
-        fontSize: "0.9rem",
-        position: "relative",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+    <div className="command-preview">
+      <div className="command-preview-header">
         <strong>Generated Command:</strong>
         <button
           onClick={copyToClipboard}
           aria-label="Copy command"
-          style={{
-            backgroundColor: "#333",
-            color: "white",
-            border: "1px solid #555",
-            padding: "0.25rem 0.5rem",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "0.8rem",
-          }}
+          className="btn btn-secondary btn-sm"
         >
           {copied ? "Copied!" : "Copy"}
         </button>
       </div>
-      <code style={{ wordBreak: "break-all" }}>{command}</code>
+      <code className="command-preview-code">{command}</code>
       <span aria-live="polite" className="sr-only">
         {copied ? "Command copied to clipboard" : ""}
       </span>

@@ -38,8 +38,10 @@ describe("DisplayPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<DisplayPanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Max Size")).not.toBeInTheDocument();
+    const { container } = render(<DisplayPanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows warning when camera source is selected", () => {

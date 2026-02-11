@@ -37,8 +37,10 @@ describe("PerformancePanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    render(<PerformancePanel {...defaultProps} expanded={false} />);
-    expect(screen.queryByText("Maximum FPS:")).not.toBeInTheDocument();
+    const { container } = render(<PerformancePanel {...defaultProps} expanded={false} />);
+    const panelContent = container.querySelector(".panel-content");
+    expect(panelContent).not.toHaveClass("expanded");
+    expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
   it("has aria-expanded attribute on header", () => {
