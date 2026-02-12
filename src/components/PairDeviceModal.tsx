@@ -1,5 +1,17 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { Device } from "../types/device";
+
+type ConnectionStatus = "idle" | "connecting" | "success" | "error";
+
+/** Validates IPv4 format: 4 octets, each 0-255 */
+function isValidIpAddress(ip: string): boolean {
+  const parts = ip.trim().split(".");
+  if (parts.length !== 4) return false;
+  return parts.every((part) => {
+    const num = Number(part);
+    return /^\d{1,3}$/.test(part) && num >= 0 && num <= 255;
+  });
+}
 
 interface PairDeviceModalProps {
   devices: Device[];
@@ -13,7 +25,7 @@ interface PairDeviceModalProps {
   onSetDevicePort: (port: number) => void;
   onSetSelectedUsbDevice: (serial: string) => void;
   onStartMirroringUsb: (serial: string) => void;
-  onConnectWireless: () => void;
+  onConnectWireless: () => Promise<void>;
 }
 
 export default function PairDeviceModal({
@@ -32,6 +44,9 @@ export default function PairDeviceModal({
 }: PairDeviceModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
+  const [connectionMessage, setConnectionMessage] = useState("");
+  const [ipError, setIpError] = useState("");
 
   useEffect(() => {
     triggerRef.current = document.activeElement;
@@ -130,9 +145,14 @@ export default function PairDeviceModal({
                   type="text"
                   placeholder="192.168.1.100"
                   value={deviceIp}
-                  onChange={(e) => onSetDeviceIp(e.target.value)}
-                  className="input"
+                  onChange={(e) => {
+                    onSetDeviceIp(e.target.value);
+                    setIpError("");
+                  }}
+                  className={`input${ipError ? " input-error" : ""}`}
+                  disabled={connectionStatus === "connecting"}
                 />
+                {ipError && <span className="input-error-text">{ipError}</span>}
               </label>
               <label className="input-label">
                 Port:
@@ -144,16 +164,50 @@ export default function PairDeviceModal({
                   onChange={(e) => onSetDevicePort(Number(e.target.value))}
                   className="input"
                   style={{ width: "120px" }}
+                  disabled={connectionStatus === "connecting"}
                 />
               </label>
+
+              {connectionStatus === "success" && (
+                <div className="connection-feedback success">
+                  {connectionMessage}
+                </div>
+              )}
+              {connectionStatus === "error" && (
+                <div className="connection-feedback error">
+                  {connectionMessage}
+                </div>
+              )}
+
               <button
                 className="btn btn-primary"
-                onClick={() => {
-                  onConnectWireless();
-                  onClose();
+                disabled={connectionStatus === "connecting"}
+                onClick={async () => {
+                  // Validate IP
+                  if (!deviceIp.trim()) {
+                    setIpError("IP address is required");
+                    return;
+                  }
+                  if (!isValidIpAddress(deviceIp)) {
+                    setIpError("Invalid IPv4 address (e.g., 192.168.1.100)");
+                    return;
+                  }
+
+                  setConnectionStatus("connecting");
+                  setConnectionMessage("");
+                  try {
+                    await onConnectWireless();
+                    setConnectionStatus("success");
+                    setConnectionMessage(`Connected to ${deviceIp}:${devicePort}`);
+                    // Auto-close after 1.5s on success
+                    setTimeout(() => onClose(), 1500);
+                  } catch (e) {
+                    setConnectionStatus("error");
+                    setConnectionMessage(`Connection failed: ${e}`);
+                  }
                 }}
               >
-                Connect
+                {connectionStatus === "connecting" ? "Connecting..." : "Connect"}
               </button>
             </div>
           )}

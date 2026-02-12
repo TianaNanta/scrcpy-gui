@@ -44,11 +44,6 @@ describe("NetworkPanel", () => {
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("renders audio codec dropdown", () => {
-    render(<NetworkPanel {...defaultProps} />);
-    expect(screen.getByText("Audio Codec:")).toBeInTheDocument();
-  });
-
   it("renders time limit input", () => {
     render(<NetworkPanel {...defaultProps} />);
     expect(screen.getByText(/Time Limit/)).toBeInTheDocument();

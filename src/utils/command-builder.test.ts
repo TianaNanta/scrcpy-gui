@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildCommandPreview } from "./command-builder";
+import { buildCommandPreview, buildArgs, formatCommandDisplay } from "./command-builder";
 import { DEFAULT_DEVICE_SETTINGS } from "../types/settings";
 import type { DeviceSettings } from "../types/settings";
 
@@ -222,7 +222,7 @@ describe("buildCommandPreview", () => {
 
     it("adds window-title when set", () => {
       const cmd = buildCommandPreview(serial, settings({ windowTitle: "My Phone" }));
-      expect(cmd).toContain("--window-title My Phone");
+      expect(cmd).toContain('--window-title "My Phone"');
     });
   });
 
@@ -394,7 +394,8 @@ describe("buildCommandPreview", () => {
       expect(cmd).toContain("--max-fps 30");
       expect(cmd).toContain("--audio-codec aac");
       expect(cmd).toContain("--audio-bit-rate 192000");
-      expect(cmd).toContain("--turn-screen-off");
+      // turnScreenOff is suppressed in camera mode (control disabled)
+      expect(cmd).not.toContain("--turn-screen-off");
     });
 
     it("generates a V4L2 + no-playback command", () => {
@@ -408,4 +409,199 @@ describe("buildCommandPreview", () => {
       expect(cmd).toContain("--no-playback");
     });
   });
+});
+
+describe("buildArgs", () => {
+  const serial = "DEVICE123";
+
+  it("returns string[] (not a joined string)", () => {
+    const args = buildArgs(serial, settings());
+    expect(Array.isArray(args)).toBe(true);
+    expect(args.every((a) => typeof a === "string")).toBe(true);
+  });
+
+  it("starts with -s <serial>", () => {
+    const args = buildArgs(serial, settings());
+    expect(args[0]).toBe("-s");
+    expect(args[1]).toBe("DEVICE123");
+  });
+
+  it("OTG mode returns early with only -s and --otg", () => {
+    const args = buildArgs(serial, settings({
+      otgMode: true,
+      maxFps: 60,
+      alwaysOnTop: true,
+    }));
+    expect(args).toEqual(["-s", "DEVICE123", "--otg"]);
+  });
+
+  it("suppresses displayId, crop when camera mode", () => {
+    const args = buildArgs(serial, settings({
+      videoSource: "camera",
+      displayId: 2,
+      crop: "100:200:0:0",
+    }));
+    expect(args).not.toContain("--display-id");
+    expect(args).not.toContain("--crop");
+  });
+
+  it("suppresses displayId, crop when virtualDisplay enabled", () => {
+    const args = buildArgs(serial, settings({
+      virtualDisplay: true,
+      virtualDisplayResolution: "1920x1080",
+      displayId: 2,
+      crop: "100:200:0:0",
+    }));
+    expect(args).not.toContain("--display-id");
+    expect(args).not.toContain("--crop");
+  });
+
+  it("skips default bitrate (8000000)", () => {
+    const args = buildArgs(serial, settings({ bitrate: 8000000 }));
+    expect(args).not.toContain("-b");
+  });
+
+  it("skips default audioBitrate (128000)", () => {
+    const args = buildArgs(serial, settings({ audioBitrate: 128000 }));
+    expect(args).not.toContain("--audio-bit-rate");
+  });
+
+  it("preserves window title with spaces as a single array element", () => {
+    const args = buildArgs(serial, settings({ windowTitle: "My Android Phone" }));
+    const titleIdx = args.indexOf("--window-title");
+    expect(titleIdx).toBeGreaterThan(-1);
+    expect(args[titleIdx + 1]).toBe("My Android Phone");
+  });
+
+  it("adds --record-format when it differs from file extension", () => {
+    const args = buildArgs(serial, settings({
+      recordingEnabled: true,
+      recordFile: "/tmp/output.mp4",
+      recordFormat: "mkv",
+    }));
+    expect(args).toContain("--record-format");
+    expect(args[args.indexOf("--record-format") + 1]).toBe("mkv");
+  });
+
+  it("omits --record-format when it matches file extension", () => {
+    const args = buildArgs(serial, settings({
+      recordingEnabled: true,
+      recordFile: "/tmp/output.mp4",
+      recordFormat: "mp4",
+    }));
+    expect(args).not.toContain("--record-format");
+  });
+});
+
+describe("control-disabled flag suppression", () => {
+  const serial = "DEVICE123";
+
+  it("camera mode suppresses --turn-screen-off", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", turnScreenOff: true }));
+    expect(args).not.toContain("--turn-screen-off");
+  });
+
+  it("camera mode suppresses --show-touches", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", showTouches: true }));
+    expect(args).not.toContain("--show-touches");
+  });
+
+  it("camera mode suppresses --stay-awake", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", stayAwake: true }));
+    expect(args).not.toContain("--stay-awake");
+  });
+
+  it("camera mode suppresses --power-off-on-close", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", powerOffOnClose: true }));
+    expect(args).not.toContain("--power-off-on-close");
+  });
+
+  it("camera mode does NOT suppress --no-power-on", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", noPowerOn: true }));
+    expect(args).toContain("--no-power-on");
+  });
+
+  it("noControl suppresses --turn-screen-off", () => {
+    const args = buildArgs(serial, settings({ noControl: true, turnScreenOff: true }));
+    expect(args).toContain("--no-control");
+    expect(args).not.toContain("--turn-screen-off");
+  });
+
+  it("noControl suppresses --show-touches, --stay-awake, --power-off-on-close", () => {
+    const args = buildArgs(serial, settings({
+      noControl: true,
+      showTouches: true,
+      stayAwake: true,
+      powerOffOnClose: true,
+    }));
+    expect(args).not.toContain("--show-touches");
+    expect(args).not.toContain("--stay-awake");
+    expect(args).not.toContain("--power-off-on-close");
+  });
+
+  it("camera + virtualDisplay suppresses --start-app", () => {
+    const args = buildArgs(serial, settings({
+      videoSource: "camera",
+      virtualDisplay: true,
+      startApp: "com.example.app",
+    }));
+    expect(args).not.toContain("--start-app=com.example.app");
+  });
+
+  it("noControl suppresses --start-app in virtualDisplay", () => {
+    const args = buildArgs(serial, settings({
+      noControl: true,
+      virtualDisplay: true,
+      startApp: "com.example.app",
+    }));
+    expect(args).not.toContain("--start-app=com.example.app");
+  });
+
+  it("emits all flags normally when neither camera nor noControl", () => {
+    const args = buildArgs(serial, settings({
+      turnScreenOff: true,
+      stayAwake: true,
+      showTouches: true,
+      powerOffOnClose: true,
+      noPowerOn: true,
+    }));
+    expect(args).toContain("--turn-screen-off");
+    expect(args).toContain("--stay-awake");
+    expect(args).toContain("--show-touches");
+    expect(args).toContain("--power-off-on-close");
+    expect(args).toContain("--no-power-on");
+  });
+
+  it("emits --start-app normally when control is enabled", () => {
+    const args = buildArgs(serial, settings({
+      virtualDisplay: true,
+      startApp: "com.example.app",
+    }));
+    expect(args).toContain("--start-app=com.example.app");
+  });
+});
+
+describe("formatCommandDisplay", () => {
+  it("prepends 'scrcpy' to args", () => {
+    const result = formatCommandDisplay(["-s", "abc"]);
+    expect(result).toBe("scrcpy -s abc");
+  });
+
+  it("quotes values containing spaces", () => {
+    const result = formatCommandDisplay(["--window-title", "My Phone"]);
+    expect(result).toBe('scrcpy --window-title "My Phone"');
+  });
+
+  it("does not quote simple values", () => {
+    const result = formatCommandDisplay(["-s", "abc", "--max-fps", "60"]);
+    expect(result).toBe("scrcpy -s abc --max-fps 60");
+  });
+
+  it("buildCommandPreview uses buildArgs + formatCommandDisplay", () => {
+    const fromDeprecated = buildCommandPreview(serial, settings());
+    const fromNew = formatCommandDisplay(buildArgs(serial, settings()));
+    expect(fromDeprecated).toBe(fromNew);
+  });
+
+  const serial = "DEVICE123";
 });

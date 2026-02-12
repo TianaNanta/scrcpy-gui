@@ -1,6 +1,6 @@
 [package]
 name = "scrcpy-gui"
-version = "0.5.0"
+version = "0.5.3"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -26,3 +26,4 @@ tokio = { version = "1", features = ["process", "full"] }
 rfd = { version = "0.16", features = ["xdg-portal"] }
 lazy_static = "1.4"
 tauri-plugin-os = "2.3.2"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

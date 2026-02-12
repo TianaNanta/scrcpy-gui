@@ -84,4 +84,67 @@ describe("BehaviorPanel", () => {
     expect(stayAwakeCheckbox.checked).toBe(true);
     expect(showTouchesCheckbox.checked).toBe(true);
   });
+
+  describe("control-disabled hint banner", () => {
+    it("shows camera mode warning when videoSource is camera", () => {
+      render(
+        <BehaviorPanel
+          {...defaultProps}
+          settings={settings({ videoSource: "camera" })}
+        />,
+      );
+      expect(
+        screen.getByText("Camera mode disables device control — some behavior options will be skipped."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows read-only mode warning when noControl is true", () => {
+      render(
+        <BehaviorPanel
+          {...defaultProps}
+          settings={settings({ noControl: true })}
+        />,
+      );
+      expect(
+        screen.getByText("Read-only mode — some behavior options will be skipped."),
+      ).toBeInTheDocument();
+    });
+
+    it("does NOT show banner in normal mode", () => {
+      render(<BehaviorPanel {...defaultProps} />);
+      expect(
+        screen.queryByText(/some behavior options will be skipped/),
+      ).not.toBeInTheDocument();
+    });
+
+    it("keeps toggles interactive when banner is shown", () => {
+      const onChange = vi.fn();
+      render(
+        <BehaviorPanel
+          {...defaultProps}
+          settings={settings({ videoSource: "camera" })}
+          onSettingsChange={onChange}
+        />,
+      );
+      const checkbox = screen.getByText("Stay Awake").closest("label")!.querySelector("input")!;
+      expect(checkbox.disabled).toBe(false);
+      fireEvent.click(checkbox);
+      expect(onChange).toHaveBeenCalledWith({ stayAwake: true });
+    });
+
+    it("shows camera warning over read-only when both apply", () => {
+      render(
+        <BehaviorPanel
+          {...defaultProps}
+          settings={settings({ videoSource: "camera", noControl: true })}
+        />,
+      );
+      expect(
+        screen.getByText("Camera mode disables device control — some behavior options will be skipped."),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Read-only mode — some behavior options will be skipped."),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

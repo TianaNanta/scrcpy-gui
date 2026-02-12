@@ -29,25 +29,6 @@ export default function NetworkPanel({
           <label
             className="input-label"
           >
-            Audio Codec:
-            <select
-              value={settings.audioCodec}
-              onChange={(e) => onSettingsChange({ audioCodec: e.target.value })}
-            >
-              <option value="opus">Opus (default)</option>
-              <option value="aac">AAC</option>
-              <option value="flac">FLAC</option>
-              <option value="raw">Raw</option>
-            </select>
-            <span className="hint">
-              Select the audio codec for streaming (Opus is recommended for low latency)
-            </span>
-          </label>
-        </div>
-        <div className="row">
-          <label
-            className="input-label"
-          >
             Time Limit (seconds):
             <input
               type="number"

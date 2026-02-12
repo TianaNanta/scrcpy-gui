@@ -25,6 +25,7 @@ interface SidebarProps {
   onTabChange: (tab: Tab) => void;
   dependencies: Dependencies | null;
   onRefreshDeps: () => void;
+  connectedCount: number;
 }
 
 export default function Sidebar({
@@ -32,6 +33,7 @@ export default function Sidebar({
   onTabChange,
   dependencies,
   onRefreshDeps,
+  connectedCount,
 }: SidebarProps) {
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
     let nextIndex = index;
@@ -58,7 +60,7 @@ export default function Sidebar({
         <DevicePhoneMobileIcon className="sidebar-logo" />
         <div className="sidebar-title">
           <h2>Scrcpy GUI</h2>
-          <span className="sidebar-version">v0.5.0</span>
+          <span className="sidebar-version">v0.5.3</span>
         </div>
       </div>
       <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">
@@ -76,6 +78,9 @@ export default function Sidebar({
             >
               <Icon className="sidebar-icon" />
               {tab.name}
+              {tab.id === "devices" && connectedCount > 0 && (
+                <span className="sidebar-badge">{connectedCount}</span>
+              )}
             </button>
           );
         })}

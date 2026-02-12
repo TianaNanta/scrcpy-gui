@@ -10,7 +10,25 @@
         />
         <link rel="icon" type="image/svg+xml" href="/vite.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="light dark" />
         <title>Tauri + React + Typescript</title>
+        <script>
+            // Synchronous theme preloader — prevent flash of wrong theme (FOWT)
+            (function () {
+                try {
+                    var theme = localStorage.getItem("scrcpy-theme") || "system";
+                    var isDark =
+                        theme === "dark" ||
+                        (theme === "system" &&
+                            window.matchMedia("(prefers-color-scheme: dark)").matches);
+                    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+                    document.documentElement.setAttribute(
+                        "data-theme",
+                        isDark ? "dark" : "light"
+                    );
+                } catch (e) {}
+            })();
+        </script>
     </head>
 
     <body>

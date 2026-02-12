@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
@@ -15,11 +15,12 @@ import type {
 import { DEFAULT_DEVICE_SETTINGS, migrateDeviceSettings, migratePreset } from "./types/settings";
 import {
   loadAllDeviceSettings,
-  loadDeviceNames,
+  migrateDeviceNamesToSettings,
+  deriveDeviceNames,
   loadPresets as loadPresetsFromStorage,
   savePresetsToStorage,
-  buildInvokeConfig,
 } from "./hooks/useDeviceSettings";
+import { buildArgs } from "./utils/command-builder";
 import { useScrcpyVersion } from "./hooks/useScrcpyVersion";
 
 import Sidebar, { type Tab } from "./components/Sidebar";
@@ -51,9 +52,11 @@ function App() {
   const [fontSize, setFontSize] = useState<number>(16);
 
   // Device settings & presets
-  const [deviceNames, setDeviceNames] = useState<Map<string, string>>(new Map());
   const [allDeviceSettings, setAllDeviceSettings] = useState<Map<string, DeviceSettings>>(new Map());
   const [presets, setPresets] = useState<Preset[]>([]);
+
+  // Derived device names from settings (no separate state)
+  const deviceNames = useMemo(() => deriveDeviceNames(allDeviceSettings), [allDeviceSettings]);
 
   // Device modal state
   const [showDeviceModal, setShowDeviceModal] = useState(false);
@@ -90,6 +93,10 @@ function App() {
         newTheme === "dark" ||
         (newTheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
+      // Set color-scheme for native form controls (selects, scrollbars, etc.)
+      root.style.setProperty("color-scheme", isDark ? "dark" : "light");
+      root.setAttribute("data-theme", isDark ? "dark" : "light");
+
       if (isDark) {
         root.style.setProperty("--background", "linear-gradient(135deg, #1e293b 0%, #334155 100%)");
         root.style.setProperty("--surface", "rgba(30, 41, 59, 0.95)");
@@ -97,6 +104,11 @@ function App() {
         root.style.setProperty("--text-secondary", "#94a3b8");
         root.style.setProperty("--border-color", "#475569");
         root.style.setProperty("--input-bg", "rgba(30, 41, 59, 0.95)");
+        // Error theme vars (dark)
+        root.style.setProperty("--error-bg", "rgba(239, 68, 68, 0.15)");
+        root.style.setProperty("--error-text", "#fca5a5");
+        root.style.setProperty("--error-border", "rgba(239, 68, 68, 0.3)");
+        root.style.setProperty("--separator-color", "rgba(255, 255, 255, 0.1)");
         // Shadow tokens (dark — higher opacity)
         root.style.setProperty("--shadow-subtle", "0 1px 2px rgba(0,0,0,0.20)");
         root.style.setProperty("--shadow-medium", "0 2px 8px rgba(0,0,0,0.30)");
@@ -118,6 +130,11 @@ function App() {
         root.style.setProperty("--text-secondary", "#6b7280");
         root.style.setProperty("--border-color", "#e5e7eb");
         root.style.setProperty("--input-bg", "white");
+        // Error theme vars (light)
+        root.style.setProperty("--error-bg", "#fee2e2");
+        root.style.setProperty("--error-text", "#dc2626");
+        root.style.setProperty("--error-border", "#fecaca");
+        root.style.setProperty("--separator-color", "rgba(0, 0, 0, 0.1)");
         // Shadow tokens (light)
         root.style.setProperty("--shadow-subtle", "0 1px 2px rgba(0,0,0,0.06)");
         root.style.setProperty("--shadow-medium", "0 2px 8px rgba(0,0,0,0.10)");
@@ -160,9 +177,10 @@ function App() {
     // Load presets
     setPresets(loadPresetsFromStorage());
 
-    // Load device names + settings
-    setDeviceNames(loadDeviceNames());
-    setAllDeviceSettings(loadAllDeviceSettings());
+    // Load device names + settings (with migration of legacy deviceNames)
+    const loaded = loadAllDeviceSettings();
+    const migrated = migrateDeviceNamesToSettings(loaded);
+    setAllDeviceSettings(migrated);
 
     // Load UI settings
     const savedTheme = (localStorage.getItem("scrcpy-theme") as Theme) || "system";
@@ -217,6 +235,38 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─── OS theme change listener ────────────────────────────────────────
+
+  useEffect(() => {
+    if (theme !== "system") return;
+
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => {
+      applySettings(theme, colorScheme, fontSize);
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [theme, colorScheme, fontSize, applySettings]);
+
+  // ─── Auto-discovery polling ──────────────────────────────────────────
+
+  const pollingRef = useRef(false);
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (pollingRef.current) return; // skip if previous poll still in progress
+      pollingRef.current = true;
+      try {
+        const devs: Device[] = await invoke("list_devices");
+        setDevices(devs);
+      } catch {
+        // Silently ignore polling errors — user can manually refresh
+      } finally {
+        pollingRef.current = false;
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   // ─── Backend calls ───────────────────────────────────────────────────
 
   async function checkDependencies() {
@@ -247,7 +297,7 @@ function App() {
 
   // ─── Scrcpy process ──────────────────────────────────────────────────
 
-  async function startScrcpy(serial?: string) {
+  async function startScrcpy(serial?: string, settingsOverride?: DeviceSettings) {
     const deviceSerial = serial || selectedDevice;
     if (!deviceSerial) return;
     setLoading(true);
@@ -262,15 +312,15 @@ function App() {
       return;
     }
 
-    const settings: DeviceSettings = {
+    const settings: DeviceSettings = settingsOverride ?? {
       ...DEFAULT_DEVICE_SETTINGS,
       ...allDeviceSettings.get(deviceSerial),
     };
     addLog(`Starting scrcpy for device: ${deviceSerial}`);
 
     try {
-      const config = buildInvokeConfig(deviceSerial, settings);
-      await invoke("start_scrcpy", { config });
+      const args = buildArgs(deviceSerial, settings);
+      await invoke("start_scrcpy", { serial: deviceSerial, args });
       setActiveDevices((prev) => [...prev, deviceSerial]);
       addLog(
         `Scrcpy started successfully${settings.recordingEnabled ? " (recording enabled)" : ""}`,
@@ -293,12 +343,27 @@ function App() {
     }
   }
 
+  async function forgetDevice(serial: string) {
+    try {
+      await invoke("forget_device", { serial });
+      // Remove from React state
+      setDevices((prev) => prev.filter((d) => d.serial !== serial));
+      // Remove from device settings
+      const updatedSettings = new Map(allDeviceSettings);
+      updatedSettings.delete(serial);
+      setAllDeviceSettings(updatedSettings);
+      localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updatedSettings)));
+      addLog(`Device forgotten: ${serial}`, "SUCCESS");
+    } catch (e) {
+      addLog(`Failed to forget device: ${e}`, "ERROR");
+    }
+  }
+
   // ─── Wireless ────────────────────────────────────────────────────────
 
   async function setupWirelessConnection() {
     if (!deviceIp.trim()) {
-      addLog("Error: IP address is required for wireless connection", "ERROR");
-      return;
+      throw new Error("IP address is required");
     }
     setWirelessConnecting(true);
     addLog(`Attempting wireless connection to ${deviceIp}:${devicePort}`, "INFO");
@@ -308,6 +373,7 @@ function App() {
       listDevices();
     } catch (error) {
       addLog(`Failed to connect to wireless device: ${error}`, "ERROR");
+      throw error;
     } finally {
       setWirelessConnecting(false);
     }
@@ -346,30 +412,35 @@ function App() {
       const settings = migrateDeviceSettings({
         ...DEFAULT_DEVICE_SETTINGS,
         ...saved,
-        name: saved?.name || deviceNames.get(serial) || "",
+        name: saved?.name || "",
       });
       setCurrentSettings(settings);
       setSelectedDeviceForSettings(serial);
       setShowDeviceModal(true);
     },
-    [allDeviceSettings, deviceNames],
+    [allDeviceSettings],
   );
 
   const handleSettingsChange = useCallback((updates: Partial<DeviceSettings>) => {
     setCurrentSettings((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  const handleSaveSettings = useCallback(
+    (settingsToSave: DeviceSettings) => {
+      const updated = new Map(allDeviceSettings);
+      updated.set(selectedDeviceForSettings, settingsToSave);
+      setAllDeviceSettings(updated);
+      localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updated)));
+    },
+    [selectedDeviceForSettings, allDeviceSettings],
+  );
+
   const handleLaunchFromModal = useCallback(() => {
-    // Save settings before launching
-    const updated = new Map(allDeviceSettings);
-    updated.set(selectedDeviceForSettings, currentSettings);
-    setAllDeviceSettings(updated);
-    localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updated)));
-    localStorage.setItem("deviceNames", JSON.stringify(Array.from(deviceNames)));
-    startScrcpy(selectedDeviceForSettings);
+    handleSaveSettings(currentSettings);
+    startScrcpy(selectedDeviceForSettings, currentSettings);
     setShowDeviceModal(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDeviceForSettings, currentSettings, allDeviceSettings, deviceNames]);
+  }, [selectedDeviceForSettings, currentSettings, handleSaveSettings]);
 
   // ─── Presets ─────────────────────────────────────────────────────────
 
@@ -431,6 +502,7 @@ function App() {
                 setShowPairModal(true);
                 setPairMode(null);
               }}
+              onForgetDevice={forgetDevice}
             />
             {showPairModal && (
               <PairDeviceModal
@@ -457,7 +529,7 @@ function App() {
                 serial={selectedDeviceForSettings}
                 settings={currentSettings}
                 deviceName={
-                  deviceNames.get(selectedDeviceForSettings) ||
+                  allDeviceSettings.get(selectedDeviceForSettings)?.name ||
                   devices.find((d) => d.serial === selectedDeviceForSettings)?.model ||
                   selectedDeviceForSettings
                 }
@@ -470,6 +542,7 @@ function App() {
                 onSettingsChange={handleSettingsChange}
                 onClose={() => setShowDeviceModal(false)}
                 onLaunch={handleLaunchFromModal}
+                onSave={handleSaveSettings}
               />
             )}
           </>
@@ -517,6 +590,7 @@ function App() {
         onTabChange={setCurrentTab}
         dependencies={dependencies}
         onRefreshDeps={checkDependencies}
+        connectedCount={devices.filter((d) => d.status === "device").length}
       />
       <main className="main-content">{renderContent()}</main>
     </div>
