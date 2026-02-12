@@ -1,38 +1,38 @@
-# Implementation Plan: Bug Fixes — UI Theming, Command Execution & Device Management
+# Implementation Plan: Stale-State Race Condition in Modal Launch Path
 
-**Branch**: `003-bug-fixes-ui-devices` | **Date**: 2026-02-11 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/003-bug-fixes-ui-devices/spec.md`
+**Branch**: `003-bug-fixes-ui-devices` | **Date**: 2026-02-12 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `/specs/003-bug-fixes-ui-devices/spec.md` — Session 3 (camera mode stale-state bug)
 
 ## Summary
 
-Fix critical bugs across four areas: (1) dark/light theme inconsistencies where dropdowns, alerts, borders and selects render with hardcoded light-only colors; (2) command execution drift where the preview builder and invoke builder apply different conditional logic for flags; (3) device list transience where disconnected devices are removed instead of persisted with status; (4) settings loss where modal close without launch discards changes. Technical approach: unify command builders into a single source of truth, introduce a persistent device registry with connection status tracking, fix all CSS theming to use custom properties without hardcoded fallbacks, and add save-on-close for the settings modal.
+When launching scrcpy from the device settings modal, `handleLaunchFromModal` saves settings via `setAllDeviceSettings()` (React batched/async) then immediately calls `startScrcpy()` which reads `allDeviceSettings.get(serial)` — still containing the **old** state. This causes all modal setting changes (including `videoSource: "camera"`) to be ignored at launch time. Fix: pass `currentSettings` directly to `startScrcpy` instead of reading from the stale state map.
 
 ## Technical Context
 
-**Language/Version**: TypeScript ~5.6.2 (strict mode) + Rust stable (Tauri 2.x)  
-**Primary Dependencies**: React 18.3, Vite 6, Tauri 2, tokio 1, serde 1, @tauri-apps/api 2, @heroicons/react 2  
-**Storage**: localStorage (frontend: device settings, names, presets, theme); no backend DB  
-**Testing**: Vitest 4 + @testing-library/react 16 (jsdom env); Rust unit tests in-module  
-**Target Platform**: Linux primary (Tauri desktop app)  
-**Project Type**: Desktop app — Tauri (Rust backend) + React (TypeScript frontend)  
-**Performance Goals**: Cold start <3s, device list refresh <2s, theme switch <1s (per constitution)  
-**Constraints**: Bundle <500KB gzipped, no CSS-in-JS runtime, no external state management  
-**Scale/Scope**: ~30 component/hook/util files, 13 Tauri commands, 6 settings panels
+**Language/Version**: TypeScript ~5.6.2 (strict) + Rust stable (edition 2021)
+**Primary Dependencies**: React 18.3, Tauri 2.x, Vite 6, @heroicons/react, tokio 1, serde 1, chrono 0.4
+**Storage**: localStorage (frontend device settings, presets, names); Tauri app data dir (device registry JSON)
+**Testing**: Vitest 4 (jsdom env, 296 tests across 23 files); cargo test (34 Rust tests)
+**Target Platform**: Linux primary (Tauri desktop app)
+**Project Type**: Tauri desktop app — React frontend + Rust backend with IPC
+**Performance Goals**: Cold start <3s, device list refresh <2s, theme switch <1s
+**Constraints**: Bundle <500KB gzipped, no CSS-in-JS, strict TypeScript, zero Rust warnings
+**Scale/Scope**: Single user, 1-10 devices, ~52 settings fields per device
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-| # | Principle | Status | Notes |
-|---|-----------|--------|-------|
-| I | Code Quality & Type Safety | PASS | All changes use strict TypeScript and typed Rust. No `any` types. New device status type will be a union type. Unified command builder reduces code duplication. |
-| II | Testing Standards | PASS | Bug fixes will include regression tests per constitution requirement. Command builder unification will have before/after test cases. Device persistence tested with mocked localStorage. |
-| III | User Experience Consistency | PASS | This feature directly addresses UX failures: theme inconsistency (FR-001–004), feedback gaps (FR-018), data loss prevention (FR-015). All UI changes will use CSS custom properties per constitution. |
-| IV | Performance Requirements | PASS | Device polling interval (~5s) well within 2s refresh target per poll cycle. No new dependencies. No unbounded memory growth — device registry is bounded by physical device count. |
-| — | Technology Stack | PASS | React 18 + TypeScript strict + Tauri 2 + Rust + Bun + CSS custom properties. No new deps needed. |
-| — | Complexity | PASS | No new projects, packages, or architectural layers. Changes are localized to existing modules. Command unification reduces a code duplication pattern. |
+| Principle | Status | Notes |
+|-----------|--------|-------|
+| I. Code Quality & Type Safety | PASS | Fix adds an optional `DeviceSettings` parameter to `startScrcpy`. No new `any` types. Strict TS maintained. |
+| II. Testing Standards | PASS | Bug fix requires regression test: `handleLaunchFromModal` must pass `currentSettings` to `buildArgs`, not stale state. Deterministic (mock invoke). |
+| III. UX Consistency | PASS | No UI changes. Fix is internal plumbing — ensures launched command matches preview. |
+| IV. Performance | PASS | No new dependencies, no new IPC calls. Removes one unnecessary state read. |
+| Tech Stack | PASS | No new dependencies. Standard React patterns. |
+| Dev Workflow | PASS | Co-located test. `bun run build` + `cargo build` verified. |
 
-**Gate result: PASS — no violations, no justifications needed.**
+**Gate Result**: ALL PASS — proceed to Phase 0.
 
 ## Project Structure
 
@@ -41,42 +41,38 @@ Fix critical bugs across four areas: (1) dark/light theme inconsistencies where 
 ```text
 specs/003-bug-fixes-ui-devices/
 ├── plan.md              # This file
-├── research.md          # Phase 0 output
-├── data-model.md        # Phase 1 output
-├── quickstart.md        # Phase 1 output
+├── research.md          # Phase 0 output (appended R12)
+├── data-model.md        # No changes needed
+├── quickstart.md        # Phase 1 output (appended Session 3)
 ├── contracts/           # Phase 1 output
-│   └── tauri-commands.md
-└── tasks.md             # Phase 2 output (NOT created by /speckit.plan)
+│   ├── command-builder-contract.md  # Existing (Session 2)
+│   ├── tauri-commands.md            # Existing (Session 1)
+│   └── launch-path-contract.md      # NEW (Session 3)
+└── tasks.md             # Phase 2 output (created by /speckit.tasks)
 ```
 
-### Source Code (repository root)
+### Source Code (affected files)
 
 ```text
 src/
-├── App.tsx                          # [MODIFY] Theme listener, device state, settings save-on-close
-├── App.css                          # [MODIFY] Fix all hardcoded colors, add :root dark/light defaults
-├── types/
-│   └── device.ts                    # [MODIFY] Add connection status union type, persistent device type
-├── utils/
-│   └── command-builder.ts           # [MODIFY] Unify into single canonical builder used by both preview and invoke
-├── hooks/
-│   ├── useDeviceSettings.ts         # [MODIFY] Refactor buildInvokeConfig to use unified builder
-│   └── useScrcpyProcess.ts          # [NO CHANGE] Already works correctly with proper args
-├── components/
-│   ├── DeviceList.tsx               # [MODIFY] Handle disconnected state, "Forget" action, status badges
-│   ├── Sidebar.tsx                  # [MODIFY] Minor — ensure device count reflects connected/all
-│   ├── PairDeviceModal.tsx          # [MODIFY] IP validation, async feedback, don't close on error
-│   ├── DeviceSettingsModal.tsx      # [MODIFY] Save-on-close callback
-│   ├── LogViewer.tsx                # [NO CHANGE]
-│   └── settings-panels/
-│       └── *.tsx                    # [MINOR] Ensure select elements styled consistently
+└── App.tsx              # MODIFY — fix startScrcpy + handleLaunchFromModal
 
-src-tauri/src/
-├── commands/
-│   ├── device.rs                    # [MODIFY] Return richer status (offline/unauthorized/device)
-│   ├── scrcpy.rs                    # [MODIFY] Apply same conditional guards as unified builder
-│   └── connection.rs                # [NO CHANGE]
-└── lib.rs                           # [NO CHANGE] — commands already registered
+src-tauri/               # No Rust changes needed
 ```
 
-**Structure Decision**: Existing single-project Tauri + React structure is preserved. No new directories or architectural layers needed — changes are localized refinements to existing modules.
+**Structure Decision**: Single file fix in `src/App.tsx`. The `startScrcpy` function gains an optional `settingsOverride` parameter. `handleLaunchFromModal` passes `currentSettings` directly. No new files created.
+
+## Complexity Tracking
+
+No constitution violations — this section intentionally left empty.
+
+## Post-Design Constitution Re-Check
+
+| Principle | Status | Post-Design Notes |
+|-----------|--------|-------------------|
+| I. Code Quality | PASS | `startScrcpy` signature: `async function startScrcpy(serial?: string, settingsOverride?: DeviceSettings)`. Clean optional parameter. No type widening. |
+| II. Testing | PASS | Regression test: verify `buildArgs` receives camera settings when launched from modal. Deterministic via mock. |
+| III. UX | PASS | No UI changes. User's configured settings now correctly reach scrcpy. |
+| IV. Performance | PASS | Zero new dependencies. One fewer state map lookup when override provided. |
+
+**Post-Design Gate Result**: ALL PASS — ready for task generation (`/speckit.tasks`).

@@ -25,6 +25,20 @@ export default function BehaviorPanel({
         <ChevronDownIcon />
       </button>
       <div className={`panel-content${expanded ? ' expanded' : ''}`} aria-hidden={!expanded}>
+          {settings.videoSource === "camera" && (
+            <div className="version-warning">
+              <span>
+                Camera mode disables device control — some behavior options will be skipped.
+              </span>
+            </div>
+          )}
+          {settings.videoSource !== "camera" && settings.noControl && (
+            <div className="version-warning">
+              <span>
+                Read-only mode — some behavior options will be skipped.
+              </span>
+            </div>
+          )}
           <div className="row">
             <label className="checkbox-label">
               <input

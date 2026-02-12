@@ -115,19 +115,24 @@ export function buildArgs(serial: string, settings: DeviceSettings): string[] {
   }
 
   // ─── Behavior ─────────────────────────────────────────────────────────────
+  // Camera mode implicitly disables device control in scrcpy; explicit
+  // --no-control does the same.  Control-dependent flags would cause scrcpy
+  // to error, so we suppress them silently.
+  const controlDisabled = settings.videoSource === "camera" || settings.noControl;
+
   if (settings.noControl) {
     args.push("--no-control");
   }
-  if (settings.turnScreenOff) {
+  if (settings.turnScreenOff && !controlDisabled) {
     args.push("--turn-screen-off");
   }
-  if (settings.stayAwake) {
+  if (settings.stayAwake && !controlDisabled) {
     args.push("--stay-awake");
   }
-  if (settings.showTouches) {
+  if (settings.showTouches && !controlDisabled) {
     args.push("--show-touches");
   }
-  if (settings.powerOffOnClose) {
+  if (settings.powerOffOnClose && !controlDisabled) {
     args.push("--power-off-on-close");
   }
   if (settings.noPowerOn) {
@@ -180,7 +185,7 @@ export function buildArgs(serial: string, settings: DeviceSettings): string[] {
       }
     }
     args.push(newDisplay);
-    if (settings.startApp) {
+    if (settings.startApp && !controlDisabled) {
       args.push(`--start-app=${settings.startApp}`);
     }
   }

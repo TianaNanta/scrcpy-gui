@@ -245,3 +245,187 @@
 6. US5 Settings Persistence → no data loss (SC-005)
 7. US6 Pair Modal → polished connection UX (SC-006)
 8. Polish → dead code cleaned up, full test pass
+
+---
+---
+
+# Session 2: Camera/No-Control Flag Suppression & UI Hints
+
+**Input**: Updated design documents from Session 2 (2026-02-11)
+**Context**: Bug fix — `--video-source=camera` and `--no-control` cause scrcpy to error when control-dependent flags are passed. See [command-builder-contract.md](contracts/command-builder-contract.md) for full behavioral contract.
+**Scope**: 4 files modified, 0 new files. Frontend-only fix.
+**Spec References**: FR-007 (suppression), FR-007a (UI hints), US2 scenarios 5
+
+## Format: `[ID] [P?] [Story?] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies on incomplete tasks)
+- **[Story]**: Which user story this task belongs to (US2)
+- Exact file paths included in all task descriptions
+
+---
+
+## Phase 10: Setup (Session 2)
+
+**Purpose**: Verify baseline — all Session 1 work still passes before making changes
+
+- [x] T050 Verify project compiles and all existing tests pass by running `bun run test && cd src-tauri && cargo test && cd .. && bun run build`
+
+---
+
+## Phase 11: User Story 2 (continued) — Control-Disabled Flag Suppression (Priority: P1)
+
+**Goal**: When device control is disabled — either implicitly by camera mode or explicitly by `--no-control` — the command builder silently suppresses 5 control-dependent flags. The BehaviorPanel shows an informational banner explaining why. Toggle state is preserved.
+
+**Independent Test**: Set `videoSource` to `camera`, enable `turnScreenOff` + `showTouches` + `stayAwake` + `powerOffOnClose`, generate args → verify none of those 4 flags appear. Set `noPowerOn` → verify `--no-power-on` DOES appear. Open BehaviorPanel with camera mode → verify info banner is shown. Repeat with `noControl: true` instead of camera.
+
+### Implementation
+
+- [x] T051 [US2] Add `controlDisabled` guard and suppress 4 behavior flags in `src/utils/command-builder.ts`: Insert `const controlDisabled = settings.videoSource === "camera" || settings.noControl;` before the Behavior section (line ~131). Guard `turnScreenOff`, `stayAwake`, `showTouches`, `powerOffOnClose` with `&& !controlDisabled`. Leave `noPowerOn` unguarded (safe without control).
+- [x] T052 [US2] Suppress `--start-app` when control is disabled in `src/utils/command-builder.ts`: In the Virtual Display section (line ~196), change `if (settings.startApp)` to `if (settings.startApp && !controlDisabled)`. Move the `controlDisabled` const above Virtual Display section so it is in scope.
+- [x] T053 [P] [US2] Add control-disabled warning banner to `src/components/settings-panels/BehaviorPanel.tsx`: After the panel-content opening, before the first `<div className="row">`, add a conditional banner using the existing `version-warning` class. Show when `settings.videoSource === "camera"` (message: "Camera mode disables device control — some behavior options will be skipped.") or `settings.noControl` (message: "Read-only mode — some behavior options will be skipped."). Follow the existing OTG warning pattern.
+- [x] T054 [P] [US2] Add regression tests for control-disabled suppression in `src/utils/command-builder.test.ts`: Add a new `describe("control-disabled flag suppression")` block with these test cases: (1) camera mode suppresses `--turn-screen-off`, (2) camera mode suppresses `--show-touches`, (3) camera mode suppresses `--stay-awake`, (4) camera mode suppresses `--power-off-on-close`, (5) camera mode does NOT suppress `--no-power-on`, (6) noControl suppresses `--turn-screen-off`, (7) virtual display + camera suppresses `--start-app`, (8) neither camera nor noControl → flags are emitted normally.
+- [x] T055 [P] [US2] Add BehaviorPanel hint rendering tests in `src/components/settings-panels/BehaviorPanel.test.tsx`: Add tests verifying: (1) camera mode shows "Camera mode disables device control" banner, (2) noControl shows "Read-only mode" banner, (3) normal mode (no camera, no noControl) does NOT show banner, (4) toggles remain interactive (not disabled) when banner is shown.
+
+**Checkpoint**: Camera mode and no-control mode correctly suppress control-dependent flags. UI informs users. All regression tests pass.
+
+---
+
+## Phase 12: Verification (Session 2)
+
+**Purpose**: Final validation — all tests pass, build clean, no regressions
+
+- [x] T056 Run full test suite (`bun run test && cd src-tauri && cargo test`), verify `bun run build` succeeds with zero errors, and confirm total test count increased by the new regression tests
+
+---
+
+## Dependencies & Execution Order (Session 2)
+
+### Phase Dependencies
+
+- **Phase 10 (Setup)**: No dependencies — start immediately
+- **Phase 11 (US2 continued)**: Depends on Phase 10
+- **Phase 12 (Verification)**: Depends on Phase 11
+
+### Within Phase 11
+
+- T051 and T052 touch the same file (`command-builder.ts`) — execute sequentially (T051 first, then T052 uses same `controlDisabled` const)
+- T053 (BehaviorPanel.tsx), T054 (command-builder.test.ts), T055 (BehaviorPanel.test.tsx) are in different files and marked [P] — can run in parallel with each other AND after T051
+- T053, T054, T055 can start after T051 (they test/complement the new behavior)
+
+### Parallel Opportunities
+
+```bash
+# After T051 completes, these can all run simultaneously:
+[US2] T052 — command-builder.ts (startApp guard, same file as T051 but different section)
+[US2] T053 — BehaviorPanel.tsx (UI warning banner)
+[US2] T054 — command-builder.test.ts (regression tests)
+[US2] T055 — BehaviorPanel.test.tsx (hint rendering tests)
+```
+
+---
+
+## Implementation Strategy (Session 2)
+
+### Execution Order
+
+1. T050: Verify baseline
+2. T051: Add `controlDisabled` guard for 4 behavior flags
+3. T052: Guard `--start-app` in virtual display section
+4. T053 + T054 + T055 (parallel): UI banner + all regression tests
+5. T056: Full verification
+
+### Scope
+
+- **4 files modified**: `command-builder.ts`, `command-builder.test.ts`, `BehaviorPanel.tsx`, `BehaviorPanel.test.tsx`
+- **0 new files**: All changes within existing files
+- **~30 lines added** across all files (estimated)
+- **No Rust changes**: Fix is entirely in the frontend command builder and UI
+
+---
+
+# Session 3: Stale-State Race Condition in Modal Launch Path
+
+**Input**: Updated design documents from Session 3 (2026-02-12)
+**Context**: Bug fix — selecting `--video-source=camera` in the device settings modal doesn't activate the camera. The displayed command preview is correct, but the actual launched command uses stale/default settings. Root cause: `handleLaunchFromModal` calls `setAllDeviceSettings()` (React batched/async) then immediately reads the old state in `startScrcpy()`. See [launch-path-contract.md](contracts/launch-path-contract.md) for full behavioral contract and [research.md](research.md) R12 for decision rationale.
+**Scope**: 1 file modified (`src/App.tsx`), 1 test file modified. Frontend-only fix.
+**Spec References**: FR-005 (command execution consistency), US2 (reliable command execution)
+
+## Format: `[ID] [P?] [Story?] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies on incomplete tasks)
+- **[Story]**: Which user story this task belongs to (US2)
+- Exact file paths included in all task descriptions
+
+---
+
+## Phase 13: Setup (Session 3)
+
+**Purpose**: Verify baseline — all Session 1+2 work still passes before making changes
+
+- [x] T057 Verify project compiles and all existing tests pass by running `bun run test && cd src-tauri && cargo test && cd .. && bun run build`
+
+---
+
+## Phase 14: User Story 2 (continued) — Stale-State Launch Fix (Priority: P1)
+
+**Goal**: When launching scrcpy from the device settings modal, the executed command uses the exact settings the user configured in the modal — not stale state from before the modal was opened. The fix adds an optional `settingsOverride` parameter to `startScrcpy()` so `handleLaunchFromModal` can pass `currentSettings` directly, bypassing the batched `setAllDeviceSettings` state.
+
+**Independent Test**: Open device settings modal → set `videoSource` to `camera` → click "Start Mirroring" → verify the Tauri `invoke("start_scrcpy")` call receives args containing `--video-source=camera`. Repeat with other settings changes (e.g., resolution, bitrate) to confirm they all reach the launched command.
+
+### Implementation
+
+- [x] T058 [US2] Add `settingsOverride?: DeviceSettings` parameter to `startScrcpy` function in `src/App.tsx`: Change the function signature from `async function startScrcpy(serial?: string)` to `async function startScrcpy(serial?: string, settingsOverride?: DeviceSettings)`. Replace the settings resolution line (currently `const settings: DeviceSettings = { ...DEFAULT_DEVICE_SETTINGS, ...allDeviceSettings.get(deviceSerial) }`) with `const settings: DeviceSettings = settingsOverride ?? { ...DEFAULT_DEVICE_SETTINGS, ...allDeviceSettings.get(deviceSerial) }`. This ensures existing call sites (DeviceList, PairDeviceModal) continue reading from state, while the modal launch path can bypass stale state. See [launch-path-contract.md](contracts/launch-path-contract.md) for the exact implementation.
+- [x] T059 [US2] Update `handleLaunchFromModal` callback in `src/App.tsx` to pass `currentSettings` as the second argument to `startScrcpy`: Change `startScrcpy(selectedDeviceForSettings)` to `startScrcpy(selectedDeviceForSettings, currentSettings)`. This ensures the modal's live settings reach `buildArgs()` directly without going through React's batched state update cycle.
+- [x] T060 [P] [US2] Add regression test for modal launch settings override in `src/App.test.tsx` (or co-located test): Write a test that verifies when `startScrcpy` is called with a `settingsOverride` containing `videoSource: "camera"`, the resulting `invoke("start_scrcpy")` call receives args that include `--video-source=camera`. Also verify that when `settingsOverride` is undefined, settings are read from the `allDeviceSettings` map as before (backward compatibility).
+
+**Checkpoint**: Modal launch path now correctly passes user-configured settings to scrcpy. Camera mode, and all other modal setting changes, work identically whether launched from the app or copy-pasted from the command preview.
+
+---
+
+## Phase 15: Verification (Session 3)
+
+**Purpose**: Final validation — all tests pass, build clean, no regressions
+
+- [x] T061 Run full test suite (`bun run test && cd src-tauri && cargo test`), verify `bun run build` succeeds with zero errors, and confirm total test count increased by the new regression test(s)
+
+---
+
+## Dependencies & Execution Order (Session 3)
+
+### Phase Dependencies
+
+- **Phase 13 (Setup)**: No dependencies — start immediately
+- **Phase 14 (US2 continued)**: Depends on Phase 13
+- **Phase 15 (Verification)**: Depends on Phase 14
+
+### Within Phase 14
+
+- T058 and T059 touch the same file (`App.tsx`) — execute sequentially (T058 first adds the parameter, T059 updates the call site)
+- T060 (regression test) is in a different file and marked [P] — can run in parallel with T059 after T058 completes
+
+### Parallel Opportunities
+
+```bash
+# After T058 completes, these can run simultaneously:
+[US2] T059 — App.tsx (update handleLaunchFromModal call site)
+[US2] T060 — App.test.tsx (regression test for settings override)
+```
+
+---
+
+## Implementation Strategy (Session 3)
+
+### Execution Order
+
+1. T057: Verify baseline (all 296 JS + 34 Rust tests pass, build clean)
+2. T058: Add `settingsOverride` parameter to `startScrcpy`
+3. T059 + T060 (parallel): Update `handleLaunchFromModal` + regression test
+4. T061: Full verification
+
+### Scope
+
+- **1 file modified**: `App.tsx` (~2-3 lines changed)
+- **1 test file modified/created**: `App.test.tsx` (regression test)
+- **0 new production files**: Fix is entirely within existing `startScrcpy` function
+- **No Rust changes**: Fix is entirely in the frontend React layer
+- **~10 lines added** across all files (estimated)

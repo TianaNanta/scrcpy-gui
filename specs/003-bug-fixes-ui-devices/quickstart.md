@@ -108,6 +108,10 @@ bun run tauri build
 | Rust-managed `devices.json` with three-way merge | [research.md#R5](./research.md) |
 | 3-second setInterval polling for auto-discovery | [research.md#R6](./research.md) |
 | USB and wireless serials as separate device entries | [research.md#R7](./research.md) |
+| Suppress 5 control-dependent flags when control disabled | [research.md#R8](./research.md) |
+| Camera mode auto-disables control in scrcpy | [research.md#R9](./research.md) |
+| `controlDisabled` boolean guard pattern in `buildArgs()` | [research.md#R10](./research.md) |
+| `version-warning` banner in BehaviorPanel for hints | [research.md#R11](./research.md) |
 
 ## File Change Summary
 
@@ -115,13 +119,26 @@ bun run tauri build
 |---|---|---|
 | `index.html` | Modify | Add theme preloader script |
 | `src/App.css` | Modify | Fix ~15 hardcoded colors, add `:root` defaults |
-| `src/App.tsx` | Modify | Theme listener, polling, save-on-close, device state |
+| `src/App.tsx` | Modify | Theme listener, polling, save-on-close, device state, fix stale-state launch bug |
 | `src/types/device.ts` | Modify | Add `last_seen`, `first_seen`, status union type |
-| `src/utils/command-builder.ts` | Modify | Unify into `buildArgs()` + `formatCommandDisplay()` |
+| `src/utils/command-builder.ts` | Modify | Unify into `buildArgs()` + `formatCommandDisplay()` + control-disabled suppression |
+| `src/utils/command-builder.test.ts` | Modify | Add regression tests for control-disabled suppression |
 | `src/hooks/useDeviceSettings.ts` | Modify | Remove `buildInvokeConfig`, use `buildArgs` |
 | `src/components/DeviceList.tsx` | Modify | Disconnected styling, "Forget" button |
 | `src/components/PairDeviceModal.tsx` | Modify | IP validation, async feedback |
 | `src/components/DeviceSettingsModal.tsx` | Modify | Save-on-close callback |
+| `src/components/settings-panels/BehaviorPanel.tsx` | Modify | Control-disabled warning banner |
+| `src/components/settings-panels/BehaviorPanel.test.tsx` | Modify | Test warning banner rendering |
 | `src-tauri/src/commands/scrcpy.rs` | Modify | Simplify to `Vec<String>` passthrough |
 | `src-tauri/src/commands/device.rs` | Modify | Registry merge, file persistence |
 | `src-tauri/src/lib.rs` | Modify | Register `forget_device` command |
+
+### Session 3: Stale-State Launch Bug (2026-02-12)
+
+**Architecture Decision — R12**: `startScrcpy` gains `settingsOverride?: DeviceSettings` parameter. `handleLaunchFromModal` passes `currentSettings` directly to bypass React's batched state update. See [contracts/launch-path-contract.md](contracts/launch-path-contract.md).
+
+**Files changed (Session 3)**:
+
+| File | Action | Summary |
+|---|---|---|
+| `src/App.tsx` | Modify | Add `settingsOverride` param to `startScrcpy`, update `handleLaunchFromModal` call |

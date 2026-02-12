@@ -5,6 +5,20 @@
 **Status**: Draft  
 **Input**: User description: "Resolve some issues with this project, like UI that doesn't match dark/light mode (dropdown stay light/white even in dark mode), mirroring tweaks don't work as the user entered a set of given configuration (generated command work well when copied and pasted inside terminal but when launched via the app, doesn't work as intended), list_devices that show directly connected devices without adding or pairing it via the add devices buttons and also the fact that when a devices is disconnected, it is also removed from the list of devices but I want it to stay in the list with a state as disconnected so that when I reconnect the devices, I can just reconnect to it from the list without adding it as a new devices, and many more bugs and issues fixes"
 
+## Clarifications
+
+### Session 2026-02-11
+
+### Session 2026-02-12
+
+- Q: Camera mode (`--video-source=camera`) selected in the modal doesn't activate the device camera — app always mirrors the screen. Root cause? → A: Stale React state race condition. `handleLaunchFromModal` calls `setAllDeviceSettings()` (batched/async) then immediately calls `startScrcpy()` which reads the old state. Fix: pass `currentSettings` directly to `buildArgs` in the modal launch path instead of reading from the state map. No clarification questions needed — FR-005 already covers expected behavior.
+
+### Session 2026-02-11
+
+- Q: Which control-dependent flags should the command builder suppress in camera mode? → A: All flags that error when control is disabled: `--turn-screen-off`, `--show-touches`, `--power-off-on-close`, `--stay-awake`, `--start-app`. Note: `--no-power-on` is NOT control-dependent (safe to pass).
+- Q: Should the UI indicate that control-dependent flags are suppressed in camera mode? → A: Yes — show a brief info message or tooltip on affected toggles (e.g., "Disabled in camera mode") but don't change toggle state
+- Q: Should the same suppression + UI hints apply when the user explicitly enables `--no-control`? → A: Yes — identical behavior for both camera mode and explicit no-control
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -53,8 +67,9 @@ As a user, I want the mirroring session launched via the app to behave identical
 2. **Given** the user has set a window title containing spaces (e.g., "My Phone"), **When** they launch mirroring via the app, **Then** the window title is correctly passed without being split into multiple arguments.
 3. **Given** the user has set a recording path containing spaces, **When** they launch via the app, **Then** the recording saves to the correct file path.
 4. **Given** the user has selected "camera" as video source and configured camera-specific options, **When** they launch via the app, **Then** display-specific flags (like `--display-id`) that conflict with camera mode are not sent.
-5. **Given** the user has configured a virtual display with custom dimensions, **When** they launch via the app, **Then** flags incompatible with virtual display mode (e.g., `--crop`, `--display-id`) are not sent.
-6. **Given** the user has all options at their default values, **When** they launch mirroring, **Then** no redundant default-value flags are passed (the command is clean and minimal).
+5. **Given** the user has selected "camera" as video source, **When** they launch via the app, **Then** control-dependent flags (`--turn-screen-off`, `--show-touches`, `--power-off-on-close`, `--stay-awake`, `--start-app`) are suppressed because camera mode disables device control.
+6. **Given** the user has configured a virtual display with custom dimensions, **When** they launch via the app, **Then** flags incompatible with virtual display mode (e.g., `--crop`, `--display-id`) are not sent.
+7. **Given** the user has all options at their default values, **When** they launch mirroring, **Then** no redundant default-value flags are passed (the command is clean and minimal).
 
 ---
 
@@ -136,6 +151,8 @@ As a user, I want the "Pair Device" modal to provide meaningful feedback (succes
 - What happens when the device list refresh takes a long time (many devices, slow ADB responses)? The UI should show a loading state and remain responsive.
 - What happens when `adb` is not installed or not on PATH? The system should show a clear error message rather than silently failing.
 - What happens when a user removes a device from the list that currently has an active mirroring session? The system should stop the session and then remove the device.
+- What happens when settings are changed in the modal and launched immediately? The launch path must use the modal's live settings (`currentSettings`), not the React state map (`allDeviceSettings`), because `setState` is batched and not yet applied when `startScrcpy` runs in the same synchronous block. This stale-state race condition causes the executed command to use old/default settings instead of the user's current choices.
+- What happens when `--video-source=camera` is active and control-dependent options are enabled? Camera mode implicitly disables device control; the command builder must silently suppress `--turn-screen-off`, `--show-touches`, `--power-off-on-close`, `--stay-awake`, and `--start-app` to prevent scrcpy errors. `--no-power-on` is safe to pass.
 
 ## Requirements *(mandatory)*
 
@@ -152,7 +169,8 @@ As a user, I want the "Pair Device" modal to provide meaningful feedback (succes
 
 - **FR-005**: System MUST ensure the scrcpy command executed by the app uses exactly the same set of flags and arguments as shown in the command preview display.
 - **FR-006**: System MUST correctly handle argument values containing spaces, quotes, or special characters when executing scrcpy (e.g., window titles, file paths).
-- **FR-007**: System MUST apply the same conditional logic for flag inclusion in both the command preview builder and the execution builder (e.g., suppressing `--display-id` when camera mode is active, suppressing `--crop` when virtual display is active).
+- **FR-007**: System MUST apply the same conditional logic for flag inclusion in both the command preview builder and the execution builder (e.g., suppressing `--display-id` when camera mode is active, suppressing `--crop` when virtual display is active). When device control is disabled — either implicitly by `--video-source=camera` or explicitly by `--no-control` — the system MUST suppress all control-dependent flags: `--turn-screen-off`, `--show-touches`, `--power-off-on-close`, `--stay-awake`, `--start-app`. Note: `--no-power-on` is NOT control-dependent and should NOT be suppressed.
+- **FR-007a**: When device control is disabled (by camera mode or explicit `--no-control`), the UI MUST show a brief informational indicator (tooltip or inline hint) on control-dependent toggles to inform the user these flags will be suppressed. The toggle state itself MUST NOT be changed — the user's intent is preserved and re-applied when control is re-enabled.
 - **FR-008**: System MUST NOT pass default-value flags to scrcpy when the user has not modified the option from its default (keeping the executed command minimal and clean).
 
 **Device List & Persistence**

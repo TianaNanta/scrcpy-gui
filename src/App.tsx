@@ -297,7 +297,7 @@ function App() {
 
   // ─── Scrcpy process ──────────────────────────────────────────────────
 
-  async function startScrcpy(serial?: string) {
+  async function startScrcpy(serial?: string, settingsOverride?: DeviceSettings) {
     const deviceSerial = serial || selectedDevice;
     if (!deviceSerial) return;
     setLoading(true);
@@ -312,7 +312,7 @@ function App() {
       return;
     }
 
-    const settings: DeviceSettings = {
+    const settings: DeviceSettings = settingsOverride ?? {
       ...DEFAULT_DEVICE_SETTINGS,
       ...allDeviceSettings.get(deviceSerial),
     };
@@ -437,7 +437,7 @@ function App() {
 
   const handleLaunchFromModal = useCallback(() => {
     handleSaveSettings(currentSettings);
-    startScrcpy(selectedDeviceForSettings);
+    startScrcpy(selectedDeviceForSettings, currentSettings);
     setShowDeviceModal(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeviceForSettings, currentSettings, handleSaveSettings]);

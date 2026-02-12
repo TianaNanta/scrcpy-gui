@@ -168,3 +168,115 @@ Treat USB and wireless serials as **separate device entries**. No automatic corr
 |---|---|---|
 | Auto-correlate via `ro.serialno` | Rejected | Requires both connections active simultaneously; sometimes unavailable; merging settings is destructive |
 | User-initiated linking | Deferred | Good idea but adds UI complexity; future enhancement if requested |
+
+---
+
+## R8: Scrcpy Control-Dependent Flags (Session 2)
+
+### Decision
+Exactly **5 scrcpy flags** require device control and produce startup errors when control is disabled:
+
+| Flag | Error Message |
+|------|--------------|
+| `--turn-screen-off` (`-S`) | `Cannot request to turn screen off if control is disabled` |
+| `--stay-awake` (`-w`) | `Cannot request to stay awake if control is disabled` |
+| `--show-touches` (`-t`) | `Cannot request to show touches if control is disabled` |
+| `--power-off-on-close` | `Cannot request power off on close if control is disabled` |
+| `--start-app` | `Cannot start an Android app if control is disabled` |
+
+**`--no-power-on` is NOT control-dependent** — it simply sets `opts->power_on = false` and is safe to pass.
+
+### Rationale
+Verified against scrcpy source code (`app/src/cli.c`, lines ~3235-3267). The `!opts->control` validation block checks exactly these 5 flags.
+
+### Alternatives Considered
+| Approach | Verdict | Why |
+|---|---|---|
+| Suppress only 2 user-reported flags | Rejected | Other 3 cause identical errors |
+| Suppress ALL behavior flags including `--no-power-on` | Rejected | `--no-power-on` is safe; suppressing alters user intent |
+| Suppress 5 flags | **Chosen** | Complete, verified against source |
+
+## R9: Camera Mode Auto-Disables Control
+
+### Decision
+When `--video-source=camera` is set, scrcpy automatically disables control before validation:
+```c
+if (opts->control) {
+    LOGI("Camera video source: control disabled");
+    opts->control = false;
+}
+```
+
+Suppression condition: `videoSource === "camera" || noControl`
+
+### Rationale
+Auto-disable happens before flag validation. Both code paths lead to `control = false`.
+
+## R10: Command Builder Suppression Pattern
+
+### Decision
+Add a computed `controlDisabled` boolean at the top of `buildArgs()`, then guard each control-dependent flag:
+```typescript
+const controlDisabled = settings.videoSource === "camera" || settings.noControl;
+// ...
+if (settings.turnScreenOff && !controlDisabled) {
+  args.push("--turn-screen-off");
+}
+```
+
+### Rationale
+Follows existing codebase pattern (e.g., `settings.videoSource !== "camera"` guards on display flags). Single boolean avoids duplicate conditions.
+
+## R11: UI Hint Pattern for Suppressed Toggles
+
+### Decision
+Reuse existing `version-warning` CSS class (already in BehaviorPanel for OTG mode). Add a single banner at the top of BehaviorPanel content when `controlDisabled`:
+```tsx
+{controlDisabled && (
+  <div className="version-warning">
+    <span>
+      {settings.videoSource === "camera"
+        ? "Camera mode disables device control — some behavior options will be skipped."
+        : "Read-only mode — some behavior options will be skipped."}
+    </span>
+  </div>
+)}
+```
+
+### Rationale
+- Reuses existing CSS — no new styles needed
+- Single banner is less noisy than per-toggle hints
+- Contextual message explains WHY (camera vs explicit no-control)
+- Toggle states preserved — user intent not lost
+
+### Alternatives Considered
+| Approach | Verdict | Why |
+|---|---|---|
+| Per-toggle tooltip | Rejected | More code/noise, harder to maintain |
+| Disable checkboxes | Rejected | Violates FR-007a (preserve toggle state) |
+| No UI feedback | Rejected | Clarification Q2 explicitly required hints |
+
+---
+
+## R12: Stale React State in Modal Launch Path
+
+### Decision
+Add optional `settingsOverride?: DeviceSettings` parameter to `startScrcpy()` in App.tsx. `handleLaunchFromModal` passes `currentSettings` directly, bypassing the stale `allDeviceSettings` map.
+
+### Rationale
+- `handleLaunchFromModal` calls `handleSaveSettings(currentSettings)` which invokes `setAllDeviceSettings()` — a React state setter that is **batched** and not applied until the next render.
+- Immediately after, `startScrcpy()` reads `allDeviceSettings.get(serial)` — which is still the **old** state.
+- Result: `buildArgs()` receives default/old settings (e.g., `videoSource: "display"`) and ignores the user's actual choices (e.g., `videoSource: "camera"`).
+- The command preview is correct because it reads from the modal's live `currentSettings` prop — not from the state map.
+- The fix is surgical: one new optional parameter, one updated call site. No architectural refactoring needed.
+
+### Alternatives Considered
+| Approach | Verdict | Why Rejected |
+|---|---|---|
+| `flushSync` to force synchronous render | Rejected | Discouraged by React docs, performance hazard, couples correctness to render timing |
+| `useRef` mirroring `allDeviceSettings` | Rejected | Adds dual source-of-truth complexity for a single call site |
+| Refactor to use `useScrcpyProcess` hook | Deferred | The hook already takes settings as a parameter (avoiding this bug), but adopting it requires removing the `scrcpy-exit` event listener from App.tsx's useEffect and wiring `addLog` throughout — a larger refactor better suited for a dedicated cleanup task |
+| `settingsOverride` parameter (chosen) | **Accepted** | Minimal change (2 lines in App.tsx), zero risk to other call sites, directly addresses the root cause |
+
+### Key Insight
+The existing `useScrcpyProcess` hook in `src/hooks/useScrcpyProcess.ts` was already designed to avoid this bug — its `startScrcpy` requires `settings` as an explicit parameter. App.tsx doesn't use it yet because the hook was created after the inline implementation. Migrating to the hook is recommended as a future cleanup but is out of scope for this targeted fix.

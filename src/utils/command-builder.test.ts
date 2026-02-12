@@ -394,7 +394,8 @@ describe("buildCommandPreview", () => {
       expect(cmd).toContain("--max-fps 30");
       expect(cmd).toContain("--audio-codec aac");
       expect(cmd).toContain("--audio-bit-rate 192000");
-      expect(cmd).toContain("--turn-screen-off");
+      // turnScreenOff is suppressed in camera mode (control disabled)
+      expect(cmd).not.toContain("--turn-screen-off");
     });
 
     it("generates a V4L2 + no-playback command", () => {
@@ -489,6 +490,94 @@ describe("buildArgs", () => {
       recordFormat: "mp4",
     }));
     expect(args).not.toContain("--record-format");
+  });
+});
+
+describe("control-disabled flag suppression", () => {
+  const serial = "DEVICE123";
+
+  it("camera mode suppresses --turn-screen-off", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", turnScreenOff: true }));
+    expect(args).not.toContain("--turn-screen-off");
+  });
+
+  it("camera mode suppresses --show-touches", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", showTouches: true }));
+    expect(args).not.toContain("--show-touches");
+  });
+
+  it("camera mode suppresses --stay-awake", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", stayAwake: true }));
+    expect(args).not.toContain("--stay-awake");
+  });
+
+  it("camera mode suppresses --power-off-on-close", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", powerOffOnClose: true }));
+    expect(args).not.toContain("--power-off-on-close");
+  });
+
+  it("camera mode does NOT suppress --no-power-on", () => {
+    const args = buildArgs(serial, settings({ videoSource: "camera", noPowerOn: true }));
+    expect(args).toContain("--no-power-on");
+  });
+
+  it("noControl suppresses --turn-screen-off", () => {
+    const args = buildArgs(serial, settings({ noControl: true, turnScreenOff: true }));
+    expect(args).toContain("--no-control");
+    expect(args).not.toContain("--turn-screen-off");
+  });
+
+  it("noControl suppresses --show-touches, --stay-awake, --power-off-on-close", () => {
+    const args = buildArgs(serial, settings({
+      noControl: true,
+      showTouches: true,
+      stayAwake: true,
+      powerOffOnClose: true,
+    }));
+    expect(args).not.toContain("--show-touches");
+    expect(args).not.toContain("--stay-awake");
+    expect(args).not.toContain("--power-off-on-close");
+  });
+
+  it("camera + virtualDisplay suppresses --start-app", () => {
+    const args = buildArgs(serial, settings({
+      videoSource: "camera",
+      virtualDisplay: true,
+      startApp: "com.example.app",
+    }));
+    expect(args).not.toContain("--start-app=com.example.app");
+  });
+
+  it("noControl suppresses --start-app in virtualDisplay", () => {
+    const args = buildArgs(serial, settings({
+      noControl: true,
+      virtualDisplay: true,
+      startApp: "com.example.app",
+    }));
+    expect(args).not.toContain("--start-app=com.example.app");
+  });
+
+  it("emits all flags normally when neither camera nor noControl", () => {
+    const args = buildArgs(serial, settings({
+      turnScreenOff: true,
+      stayAwake: true,
+      showTouches: true,
+      powerOffOnClose: true,
+      noPowerOn: true,
+    }));
+    expect(args).toContain("--turn-screen-off");
+    expect(args).toContain("--stay-awake");
+    expect(args).toContain("--show-touches");
+    expect(args).toContain("--power-off-on-close");
+    expect(args).toContain("--no-power-on");
+  });
+
+  it("emits --start-app normally when control is enabled", () => {
+    const args = buildArgs(serial, settings({
+      virtualDisplay: true,
+      startApp: "com.example.app",
+    }));
+    expect(args).toContain("--start-app=com.example.app");
   });
 });
 

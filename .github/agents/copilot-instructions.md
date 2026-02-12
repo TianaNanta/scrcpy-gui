@@ -6,6 +6,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-11
 - `localStorage` (frontend) — no database, no Tauri store plugin (001-scrcpy-options-gui)
 - TypeScript ~5.6.2 (strict mode) + Rust stable (Tauri 2.x) + React 18.3, Vite 6, Tauri 2, tokio 1, serde 1, @tauri-apps/api 2, @heroicons/react 2 (003-bug-fixes-ui-devices)
 - localStorage (frontend: device settings, names, presets, theme); no backend DB (003-bug-fixes-ui-devices)
+- TypeScript ~5.6.2 (strict) + Rust stable (edition 2021) + React 18.3, Tauri 2.x, Vite 6, @heroicons/react, tokio 1, serde 1, chrono 0.4 (003-bug-fixes-ui-devices)
+- localStorage (frontend device settings, presets, names); Tauri app data dir (device registry JSON) (003-bug-fixes-ui-devices)
 
 - TypeScript ~5.6 (strict mode) + Rust 1.93 (edition 2021) + Tauri 2.x, React 18.3, Vite 6.x, tokio 1.x, serde 1.x, rfd 0.16 (001-scrcpy-options-gui)
 
@@ -25,10 +27,10 @@ cargo test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECH
 TypeScript ~5.6 (strict mode) + Rust 1.93 (edition 2021): Follow standard conventions
 
 ## Recent Changes
+- 003-bug-fixes-ui-devices: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+- 003-bug-fixes-ui-devices: Added TypeScript ~5.6.2 (strict) + Rust stable (edition 2021) + React 18.3, Tauri 2.x, Vite 6, @heroicons/react, tokio 1, serde 1, chrono 0.4
 - 003-bug-fixes-ui-devices: Added TypeScript ~5.6.2 (strict mode) + Rust stable (Tauri 2.x) + React 18.3, Vite 6, Tauri 2, tokio 1, serde 1, @tauri-apps/api 2, @heroicons/react 2
-- 001-scrcpy-options-gui: Added TypeScript ~5.6 (strict mode) + Rust 1.93 (edition 2021) + Tauri 2.x, React 18.3, Vite 6.x, tokio 1.x, serde 1.x, rfd 0.16
 
-- 001-scrcpy-options-gui: Added TypeScript ~5.6 (strict mode) + Rust 1.93 (edition 2021) + Tauri 2.x, React 18.3, Vite 6.x, tokio 1.x, serde 1.x, rfd 0.16
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
