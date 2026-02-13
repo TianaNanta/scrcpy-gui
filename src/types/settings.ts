@@ -89,6 +89,10 @@ export interface DeviceSettings {
   noCleanup: boolean;
   forceAdbForward: boolean;
   timeLimit: number;
+
+  // Wireless Connection
+  ipAddress: string;
+  port: number;
 }
 
 /** Default values for all DeviceSettings fields */
@@ -146,6 +150,8 @@ export const DEFAULT_DEVICE_SETTINGS: DeviceSettings = {
   noCleanup: false,
   forceAdbForward: false,
   timeLimit: 0,
+  ipAddress: "",
+  port: 5555,
 };
 
 // ─── Preset ─────────────────────────────────────────────────────────────────

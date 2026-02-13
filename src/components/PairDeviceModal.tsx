@@ -14,39 +14,46 @@ function isValidIpAddress(ip: string): boolean {
 }
 
 interface PairDeviceModalProps {
-  devices: Device[];
+  availableUsbDevices: Device[];
+  usbLoading: boolean;
+  deviceName: string;
   deviceIp: string;
   devicePort: number;
   pairMode: "usb" | "wireless" | null;
   selectedUsbDevice: string;
   onClose: () => void;
   onSetPairMode: (mode: "usb" | "wireless" | null) => void;
+  onSetDeviceName: (name: string) => void;
   onSetDeviceIp: (ip: string) => void;
   onSetDevicePort: (port: number) => void;
   onSetSelectedUsbDevice: (serial: string) => void;
-  onStartMirroringUsb: (serial: string) => void;
-  onConnectWireless: () => Promise<void>;
+  onAddUsbDevice: (serial: string, name: string) => Promise<boolean>;
+  onAddWirelessDevice: (name: string) => Promise<boolean>;
 }
 
 export default function PairDeviceModal({
-  devices,
+  availableUsbDevices,
+  usbLoading,
+  deviceName,
   deviceIp,
   devicePort,
   pairMode,
   selectedUsbDevice,
   onClose,
   onSetPairMode,
+  onSetDeviceName,
   onSetDeviceIp,
   onSetDevicePort,
   onSetSelectedUsbDevice,
-  onStartMirroringUsb,
-  onConnectWireless,
+  onAddUsbDevice,
+  onAddWirelessDevice,
 }: PairDeviceModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [connectionMessage, setConnectionMessage] = useState("");
   const [ipError, setIpError] = useState("");
+  const [usbAdding, setUsbAdding] = useState(false);
 
   useEffect(() => {
     triggerRef.current = document.activeElement;
@@ -112,14 +119,27 @@ export default function PairDeviceModal({
             </div>
           ) : pairMode === "usb" ? (
             <div className="pair-usb">
-              <p>USB devices are automatically detected. Select a device to mirror:</p>
+              <p>Select a USB device to add:</p>
+              <label className="input-label">
+                Device Name (optional):
+                <input
+                  type="text"
+                  placeholder="My Phone"
+                  value={deviceName}
+                  onChange={(e) => onSetDeviceName(e.target.value)}
+                  className="input"
+                />
+              </label>
               <select
                 value={selectedUsbDevice}
                 onChange={(e) => onSetSelectedUsbDevice(e.target.value)}
                 className="select"
+                disabled={usbLoading || usbAdding}
               >
-                <option value="">Select USB device</option>
-                {devices
+                <option value="">
+                  {usbLoading ? "Detecting USB devices..." : "Select USB device"}
+                </option>
+                {availableUsbDevices
                   .filter((d) => d.status === "device" && !d.is_wireless)
                   .map((d) => (
                     <option key={d.serial} value={d.serial}>
@@ -129,16 +149,33 @@ export default function PairDeviceModal({
               </select>
               <button
                 className="btn btn-primary"
-                onClick={() => {
-                  if (selectedUsbDevice) onStartMirroringUsb(selectedUsbDevice);
-                  onClose();
+                onClick={async () => {
+                  if (!selectedUsbDevice) return;
+                  setUsbAdding(true);
+                  const added = await onAddUsbDevice(selectedUsbDevice, deviceName);
+                  setUsbAdding(false);
+                  if (added) {
+                    onClose();
+                  }
                 }}
+                disabled={usbLoading || usbAdding || !selectedUsbDevice}
               >
-                Start Mirroring
+                {usbAdding ? "Adding..." : "Add Device"}
               </button>
             </div>
           ) : (
             <div className="pair-wireless">
+              <label className="input-label">
+                Device Name (optional):
+                <input
+                  type="text"
+                  placeholder="Living Room Phone"
+                  value={deviceName}
+                  onChange={(e) => onSetDeviceName(e.target.value)}
+                  className="input"
+                  disabled={connectionStatus === "connecting"}
+                />
+              </label>
               <label className="input-label">
                 Device IP Address:
                 <input
@@ -196,18 +233,21 @@ export default function PairDeviceModal({
                   setConnectionStatus("connecting");
                   setConnectionMessage("");
                   try {
-                    await onConnectWireless();
+                    const added = await onAddWirelessDevice(deviceName);
+                    if (!added) {
+                      throw new Error("Device could not be added");
+                    }
                     setConnectionStatus("success");
-                    setConnectionMessage(`Connected to ${deviceIp}:${devicePort}`);
+                    setConnectionMessage(`Added ${deviceIp}:${devicePort}`);
                     // Auto-close after 1.5s on success
                     setTimeout(() => onClose(), 1500);
                   } catch (e) {
                     setConnectionStatus("error");
-                    setConnectionMessage(`Connection failed: ${e}`);
+                    setConnectionMessage(`Add failed: ${e}`);
                   }
                 }}
               >
-                {connectionStatus === "connecting" ? "Connecting..." : "Connect"}
+                {connectionStatus === "connecting" ? "Adding..." : "Add Device"}
               </button>
             </div>
           )}

@@ -60,7 +60,7 @@ export default function Sidebar({
         <DevicePhoneMobileIcon className="sidebar-logo" />
         <div className="sidebar-title">
           <h2>Scrcpy GUI</h2>
-          <span className="sidebar-version">v0.5.3</span>
+          <span className="sidebar-version">v0.5.4</span>
         </div>
       </div>
       <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">

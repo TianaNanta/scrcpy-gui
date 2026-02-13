@@ -59,7 +59,7 @@ pub fn save_registry(app_data_dir: &PathBuf, devices: &[DeviceInfo]) -> Result<(
 
 // ─── Three-way merge ──────────────────────────────────────────────────────
 
-/// Merge persistent registry with current ADB output.
+/// Merge persistent registry with current ADB output (ignore unregistered devices).
 /// Returns (merged_devices, serials_needing_prop_fetch).
 fn merge_devices(
     registry: Vec<DeviceInfo>,
@@ -94,23 +94,6 @@ fn merge_devices(
             // Preserve cached metadata (model, android_version, battery_level)
             result.push(device);
         }
-    }
-
-    // New devices from ADB not in registry
-    for (serial, status) in adb_map {
-        if status == "device" {
-            needs_props.push(serial.clone());
-        }
-        result.push(DeviceInfo {
-            is_wireless: serial.contains(':'),
-            serial,
-            status,
-            model: None,
-            android_version: None,
-            battery_level: None,
-            last_seen: Some(now.clone()),
-            first_seen: now.clone(),
-        });
     }
 
     (result, needs_props)
@@ -183,6 +166,49 @@ fn parse_adb_output(stdout: &str) -> Vec<AdbDevice> {
     devices
 }
 
+async fn list_adb_devices_internal() -> Result<Vec<DeviceInfo>, String> {
+    let output = Command::new("adb")
+        .arg("devices")
+        .stdout(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run adb devices: {}", e))?;
+
+    if !output.status.success() {
+        return Err("adb devices command failed".to_string());
+    }
+
+    let stdout =
+        String::from_utf8(output.stdout).map_err(|e| format!("Invalid UTF-8 output: {}", e))?;
+    let adb_devices = parse_adb_output(&stdout);
+    let now = now_iso8601();
+
+    let mut devices: Vec<DeviceInfo> = Vec::new();
+    for adb_device in adb_devices {
+        let mut info = DeviceInfo {
+            is_wireless: adb_device.serial.contains(':'),
+            serial: adb_device.serial,
+            status: adb_device.status,
+            model: None,
+            android_version: None,
+            battery_level: None,
+            last_seen: Some(now.clone()),
+            first_seen: now.clone(),
+        };
+
+        if info.status == "device" {
+            let (model, android_version, battery_level) = fetch_device_props(&info.serial).await;
+            info.model = model;
+            info.android_version = android_version;
+            info.battery_level = battery_level;
+        }
+
+        devices.push(info);
+    }
+
+    Ok(devices)
+}
+
 // ─── Tauri commands ──────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -231,6 +257,54 @@ pub async fn list_devices(app: tauri::AppHandle) -> Result<Vec<DeviceInfo>, Stri
     }
 
     Ok(devices)
+}
+
+#[tauri::command]
+pub async fn list_adb_devices() -> Result<Vec<DeviceInfo>, String> {
+    list_adb_devices_internal().await
+}
+
+#[tauri::command]
+pub async fn register_device(serial: String, app: tauri::AppHandle) -> Result<DeviceInfo, String> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data dir: {}", e))?;
+
+    let mut registry = load_registry(&app_data_dir);
+
+    if let Some(index) = registry.iter().position(|d| d.serial == serial) {
+        let mut existing = registry[index].clone();
+        if let Ok(adb_devices) = list_adb_devices_internal().await {
+            if let Some(adb_device) = adb_devices.into_iter().find(|d| d.serial == serial) {
+                existing.status = adb_device.status;
+                existing.last_seen = adb_device.last_seen;
+                existing.is_wireless = adb_device.is_wireless;
+                if existing.model.is_none() {
+                    existing.model = adb_device.model;
+                    existing.android_version = adb_device.android_version;
+                    existing.battery_level = adb_device.battery_level;
+                }
+                registry[index] = existing.clone();
+                save_registry(&app_data_dir, &registry)?;
+            }
+        }
+        return Ok(existing);
+    }
+
+    let adb_devices = list_adb_devices_internal().await?;
+    let mut device = adb_devices
+        .into_iter()
+        .find(|d| d.serial == serial)
+        .ok_or_else(|| "Device not found in adb devices".to_string())?;
+
+    let now = now_iso8601();
+    device.first_seen = now.clone();
+    device.last_seen = Some(now);
+
+    registry.push(device.clone());
+    save_registry(&app_data_dir, &registry)?;
+    Ok(device)
 }
 
 #[tauri::command]
