@@ -72,17 +72,28 @@ export function buildArgs(serial: string, settings: DeviceSettings): string[] {
   }
 
   // ─── Display ──────────────────────────────────────────────────────────────
-  if (settings.displayId > 0 && settings.videoSource !== "camera" && !settings.virtualDisplay) {
+  if (
+    settings.displayId > 0 &&
+    settings.videoSource !== "camera" &&
+    !settings.virtualDisplay
+  ) {
     args.push("--display-id", settings.displayId.toString());
   }
   if (settings.rotation > 0 && settings.videoSource !== "camera") {
     args.push("--orientation", settings.rotation.toString());
   }
-  if (settings.crop && settings.videoSource !== "camera" && !settings.virtualDisplay) {
+  if (
+    settings.crop &&
+    settings.videoSource !== "camera" &&
+    !settings.virtualDisplay
+  ) {
     args.push("--crop", settings.crop);
   }
   if (settings.lockVideoOrientation >= 0) {
-    args.push("--lock-video-orientation", settings.lockVideoOrientation.toString());
+    args.push(
+      "--lock-video-orientation",
+      settings.lockVideoOrientation.toString(),
+    );
   }
   if (settings.displayBuffer > 0) {
     args.push("--display-buffer", settings.displayBuffer.toString());
@@ -118,7 +129,8 @@ export function buildArgs(serial: string, settings: DeviceSettings): string[] {
   // Camera mode implicitly disables device control in scrcpy; explicit
   // --no-control does the same.  Control-dependent flags would cause scrcpy
   // to error, so we suppress them silently.
-  const controlDisabled = settings.videoSource === "camera" || settings.noControl;
+  const controlDisabled =
+    settings.videoSource === "camera" || settings.noControl;
 
   if (settings.noControl) {
     args.push("--no-control");
@@ -209,15 +221,19 @@ export function buildArgs(serial: string, settings: DeviceSettings): string[] {
  * special characters are quoted for readability.
  */
 export function formatCommandDisplay(args: string[]): string {
-  return "scrcpy " + args.map(a =>
-    /[\s"'\\$`]/.test(a) || a === "" ? `"${a}"` : a
-  ).join(" ");
+  return (
+    "scrcpy " +
+    args.map((a) => (/[\s"'\\$`]/.test(a) || a === "" ? `"${a}"` : a)).join(" ")
+  );
 }
 
 /**
  * @deprecated Use buildArgs() + formatCommandDisplay() instead.
  * Kept temporarily for backward compatibility during migration.
  */
-export function buildCommandPreview(serial: string, settings: DeviceSettings): string {
+export function buildCommandPreview(
+  serial: string,
+  settings: DeviceSettings,
+): string {
   return formatCommandDisplay(buildArgs(serial, settings));
 }

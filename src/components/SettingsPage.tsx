@@ -59,7 +59,9 @@ export default function SettingsPage({
               key={`color-select-${theme}`}
               value={colorScheme.name}
               onChange={(e) => {
-                const scheme = colorSchemes.find((s) => s.name === e.target.value);
+                const scheme = colorSchemes.find(
+                  (s) => s.name === e.target.value,
+                );
                 if (scheme) onColorSchemeChange(scheme);
               }}
               className="select"

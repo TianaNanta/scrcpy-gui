@@ -76,7 +76,7 @@ export default function DeviceSettingsModal({
   useEffect(() => {
     triggerRef.current = document.activeElement;
     const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     firstFocusable?.focus();
     return () => {
@@ -92,7 +92,7 @@ export default function DeviceSettingsModal({
       }
       if (e.key !== "Tab") return;
       const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       if (!focusable || focusable.length === 0) return;
       const first = focusable[0];
@@ -108,46 +108,45 @@ export default function DeviceSettingsModal({
     [handleClose],
   );
 
-  const togglePanel = useCallback(
-    (panel: string) => {
-      setExpandedPanels((prev) => {
-        const next = new Set(prev);
-        if (next.has(panel)) {
-          next.delete(panel);
-        } else {
-          next.add(panel);
-        }
-        return next;
-      });
-    },
-    [],
-  );
+  const togglePanel = useCallback((panel: string) => {
+    setExpandedPanels((prev) => {
+      const next = new Set(prev);
+      if (next.has(panel)) {
+        next.delete(panel);
+      } else {
+        next.add(panel);
+      }
+      return next;
+    });
+  }, []);
 
   // Calculate the effective serial that will be used (accounting for IP/Port changes)
   const effectiveSerial = (() => {
     if (!device?.is_wireless || !settings.ipAddress || !settings.port) {
       return serial;
     }
-    
+
     const currentParts = serial.split(":");
     if (currentParts.length !== 2) {
       return serial;
     }
-    
+
     const currentIp = currentParts[0];
     const currentPort = parseInt(currentParts[1], 10);
     const newIp = settings.ipAddress.trim();
     const newPort = settings.port;
-    
+
     // If IP/Port have changed, return the new serial
     if (newIp && (newIp !== currentIp || newPort !== currentPort)) {
       return `${newIp}:${newPort}`;
     }
-    
+
     return serial;
   })();
 
-  const generatedCommand = formatCommandDisplay(buildArgs(effectiveSerial, settings));
+  const generatedCommand = formatCommandDisplay(
+    buildArgs(effectiveSerial, settings),
+  );
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -185,7 +184,9 @@ export default function DeviceSettingsModal({
                       type="text"
                       placeholder="192.168.1.100"
                       value={settings.ipAddress || ""}
-                      onChange={(e) => onSettingsChange({ ipAddress: e.target.value })}
+                      onChange={(e) =>
+                        onSettingsChange({ ipAddress: e.target.value })
+                      }
                       className="wireless-inline-input"
                       aria-label="Device IP address"
                     />
@@ -208,7 +209,9 @@ export default function DeviceSettingsModal({
                     />
                   </label>
                   <span className="separator">•</span>
-                  <span className="android-version">Android {device?.android_version || "Unknown"}</span>
+                  <span className="android-version">
+                    Android {device?.android_version || "Unknown"}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -224,10 +227,7 @@ export default function DeviceSettingsModal({
             >
               Copy Command
             </button>
-            <button
-              className="btn btn-primary"
-              onClick={onLaunch}
-            >
+            <button className="btn btn-primary" onClick={onLaunch}>
               Launch Mirroring
             </button>
             <button

@@ -50,7 +50,8 @@ export function loadAllDeviceSettings(): Map<string, DeviceSettings> {
     try {
       const entries: [string, Partial<DeviceSettings>][] = JSON.parse(saved);
       const migrated = entries.map(
-        ([serial, raw]) => [serial, migrateDeviceSettings(raw)] as [string, DeviceSettings],
+        ([serial, raw]) =>
+          [serial, migrateDeviceSettings(raw)] as [string, DeviceSettings],
       );
       return new Map(migrated);
     } catch {
@@ -75,7 +76,10 @@ export function loadDeviceNames(): Map<string, string> {
 
 /** Save device names to localStorage (deprecated — names are now stored in deviceSettings) */
 export function saveDeviceNames(names: Map<string, string>): void {
-  localStorage.setItem(DEVICE_NAMES_KEY, JSON.stringify(Array.from(names.entries())));
+  localStorage.setItem(
+    DEVICE_NAMES_KEY,
+    JSON.stringify(Array.from(names.entries())),
+  );
 }
 
 /**
@@ -125,7 +129,9 @@ export function migrateDeviceNamesToSettings(
 }
 
 /** Derive a deviceNames map from allDeviceSettings for backward compatibility */
-export function deriveDeviceNames(allSettings: Map<string, DeviceSettings>): Map<string, string> {
+export function deriveDeviceNames(
+  allSettings: Map<string, DeviceSettings>,
+): Map<string, string> {
   const names = new Map<string, string>();
   for (const [serial, settings] of allSettings) {
     if (settings.name) {
@@ -142,7 +148,8 @@ export function loadPresets(): Preset[] {
   const saved = localStorage.getItem(PRESETS_KEY);
   if (saved) {
     try {
-      const raw: Array<Partial<Preset> & { id: string; name: string }> = JSON.parse(saved);
+      const raw: Array<Partial<Preset> & { id: string; name: string }> =
+        JSON.parse(saved);
       return raw.map(migratePreset);
     } catch {
       return [];
@@ -158,7 +165,12 @@ export function savePresetsToStorage(presets: Preset[]): void {
 
 /** Create a new preset from current settings */
 export function createPreset(name: string, settings: DeviceSettings): Preset {
-  const { recordingEnabled: _re, recordFile: _rf, recordFormat: _rfmt, ...rest } = settings;
+  const {
+    recordingEnabled: _re,
+    recordFile: _rf,
+    recordFormat: _rfmt,
+    ...rest
+  } = settings;
   return {
     ...rest,
     id: Date.now().toString(),

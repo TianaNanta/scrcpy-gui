@@ -6,7 +6,9 @@ import type { DeviceSettings } from "../../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -39,7 +41,9 @@ describe("VirtualDisplayPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<VirtualDisplayPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <VirtualDisplayPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -47,25 +51,37 @@ describe("VirtualDisplayPanel", () => {
 
   it("shows version warning when canVirtualDisplay is false", () => {
     render(<VirtualDisplayPanel {...defaultProps} canVirtualDisplay={false} />);
-    expect(screen.getByText(/Virtual display requires scrcpy ≥ 3.0/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Virtual display requires scrcpy ≥ 3.0/),
+    ).toBeInTheDocument();
   });
 
   it("does not show version warning when canVirtualDisplay is true", () => {
     render(<VirtualDisplayPanel {...defaultProps} canVirtualDisplay={true} />);
-    expect(screen.queryByText(/Virtual display requires scrcpy/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Virtual display requires scrcpy/),
+    ).not.toBeInTheDocument();
   });
 
   it("checkbox is disabled when canVirtualDisplay is false", () => {
     render(<VirtualDisplayPanel {...defaultProps} canVirtualDisplay={false} />);
-    const checkbox = screen.getByText("Enable Virtual Display").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Enable Virtual Display")
+      .closest("label")!
+      .querySelector("input")!;
     expect(checkbox.disabled).toBe(true);
   });
 
   it("toggles virtualDisplay setting", () => {
     render(<VirtualDisplayPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Enable Virtual Display").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Enable Virtual Display")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ virtualDisplay: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      virtualDisplay: true,
+    });
   });
 
   it("shows resolution and DPI inputs when virtualDisplay is enabled", () => {

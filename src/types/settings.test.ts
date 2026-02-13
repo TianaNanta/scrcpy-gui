@@ -54,7 +54,11 @@ describe("migrateDeviceSettings", () => {
   });
 
   it("preserves all fields when given a complete settings object", () => {
-    const custom = { ...DEFAULT_DEVICE_SETTINGS, name: "TestDevice", otgMode: true };
+    const custom = {
+      ...DEFAULT_DEVICE_SETTINGS,
+      name: "TestDevice",
+      otgMode: true,
+    };
     const result = migrateDeviceSettings(custom);
     expect(result.name).toBe("TestDevice");
     expect(result.otgMode).toBe(true);

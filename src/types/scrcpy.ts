@@ -21,7 +21,11 @@ export function parseVersion(raw: string): ScrcpyVersion {
 }
 
 /** Check if version >= minMajor.minMinor */
-function versionAtLeast(v: ScrcpyVersion, minMajor: number, minMinor: number): boolean {
+function versionAtLeast(
+  v: ScrcpyVersion,
+  minMajor: number,
+  minMinor: number,
+): boolean {
   return v.major > minMajor || (v.major === minMajor && v.minor >= minMinor);
 }
 

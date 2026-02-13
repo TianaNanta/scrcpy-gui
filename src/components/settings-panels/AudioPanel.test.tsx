@@ -6,7 +6,9 @@ import type { DeviceSettings } from "../../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -40,7 +42,9 @@ describe("AudioPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<AudioPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <AudioPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -48,12 +52,16 @@ describe("AudioPanel", () => {
 
   it("shows version warning when canAudio is false", () => {
     render(<AudioPanel {...defaultProps} canAudio={false} />);
-    expect(screen.getByText(/Audio forwarding requires scrcpy ≥ 2.0/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Audio forwarding requires scrcpy ≥ 2.0/),
+    ).toBeInTheDocument();
   });
 
   it("does not show version warning when canAudio is true", () => {
     render(<AudioPanel {...defaultProps} canAudio={true} />);
-    expect(screen.queryByText(/Audio forwarding requires/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Audio forwarding requires/),
+    ).not.toBeInTheDocument();
   });
 
   it("renders audio forwarding checkbox", () => {
@@ -63,9 +71,15 @@ describe("AudioPanel", () => {
 
   it("toggles audio forwarding", () => {
     render(
-      <AudioPanel {...defaultProps} settings={settings({ audioForwarding: true })} />,
+      <AudioPanel
+        {...defaultProps}
+        settings={settings({ audioForwarding: true })}
+      />,
     );
-    const checkbox = screen.getByText("Enable Audio Forwarding").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Enable Audio Forwarding")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
     expect(defaultProps.onSettingsChange).toHaveBeenCalledWith(
       expect.objectContaining({ audioForwarding: false }),

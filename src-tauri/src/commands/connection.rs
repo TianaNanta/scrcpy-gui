@@ -60,7 +60,10 @@ mod tests {
 
     #[test]
     fn format_address_standard() {
-        assert_eq!(format_adb_address("192.168.1.100", 5555), "192.168.1.100:5555");
+        assert_eq!(
+            format_adb_address("192.168.1.100", 5555),
+            "192.168.1.100:5555"
+        );
     }
 
     #[test]
@@ -75,12 +78,16 @@ mod tests {
 
     #[test]
     fn connect_success_with_already_connected() {
-        assert!(is_connect_success("already connected to 192.168.1.100:5555"));
+        assert!(is_connect_success(
+            "already connected to 192.168.1.100:5555"
+        ));
     }
 
     #[test]
     fn connect_failure_with_refused() {
-        assert!(!is_connect_success("failed to connect to 192.168.1.100:5555"));
+        assert!(!is_connect_success(
+            "failed to connect to 192.168.1.100:5555"
+        ));
     }
 
     #[test]

@@ -7,8 +7,15 @@ import { buildArgs } from "../utils/command-builder";
 interface ScrcpyProcessState {
   activeDevices: string[];
   loading: boolean;
-  startScrcpy: (serial: string, settings: DeviceSettings, addLog: (msg: string, level?: string) => void) => Promise<void>;
-  stopScrcpy: (serial: string, addLog: (msg: string, level?: string) => void) => Promise<void>;
+  startScrcpy: (
+    serial: string,
+    settings: DeviceSettings,
+    addLog: (msg: string, level?: string) => void,
+  ) => Promise<void>;
+  stopScrcpy: (
+    serial: string,
+    addLog: (msg: string, level?: string) => void,
+  ) => Promise<void>;
 }
 
 export function useScrcpyProcess(): ScrcpyProcessState {

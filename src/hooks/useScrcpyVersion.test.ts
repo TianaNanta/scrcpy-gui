@@ -61,11 +61,11 @@ describe("useScrcpyVersion", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.canAudio).toBe(true);    // ≥2.0
-    expect(result.current.canNoVideo).toBe(false);  // ≥2.1
-    expect(result.current.canCamera).toBe(false);   // ≥2.2
+    expect(result.current.canAudio).toBe(true); // ≥2.0
+    expect(result.current.canNoVideo).toBe(false); // ≥2.1
+    expect(result.current.canCamera).toBe(false); // ≥2.2
     expect(result.current.canUhidInput).toBe(false); // ≥2.4
-    expect(result.current.canGamepad).toBe(false);  // ≥2.7
+    expect(result.current.canGamepad).toBe(false); // ≥2.7
     expect(result.current.canVirtualDisplay).toBe(false); // ≥3.0
   });
 
@@ -91,7 +91,7 @@ describe("useScrcpyVersion", () => {
     renderHook(() => useScrcpyVersion());
 
     await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_scrcpy_version")
+      expect(mockInvoke).toHaveBeenCalledWith("get_scrcpy_version"),
     );
   });
 });

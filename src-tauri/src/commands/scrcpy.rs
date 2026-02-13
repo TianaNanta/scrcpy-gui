@@ -99,10 +99,13 @@ fn spawn_output_readers(app: &tauri::AppHandle, serial: &str, child: &mut Child)
             let reader = BufReader::new(stderr);
             let mut lines = reader.lines();
             while let Ok(Some(line)) = lines.next_line().await {
-                let _ = app_handle.emit("scrcpy-log", serde_json::json!({
-                    "serial": serial_owned,
-                    "line": line,
-                }));
+                let _ = app_handle.emit(
+                    "scrcpy-log",
+                    serde_json::json!({
+                        "serial": serial_owned,
+                        "line": line,
+                    }),
+                );
             }
         });
     }
@@ -115,10 +118,13 @@ fn spawn_output_readers(app: &tauri::AppHandle, serial: &str, child: &mut Child)
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
             while let Ok(Some(line)) = lines.next_line().await {
-                let _ = app_handle.emit("scrcpy-log", serde_json::json!({
-                    "serial": serial_owned,
-                    "line": line,
-                }));
+                let _ = app_handle.emit(
+                    "scrcpy-log",
+                    serde_json::json!({
+                        "serial": serial_owned,
+                        "line": line,
+                    }),
+                );
             }
         });
     }

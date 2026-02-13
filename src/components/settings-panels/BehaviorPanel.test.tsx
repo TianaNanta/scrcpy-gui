@@ -6,7 +6,9 @@ import type { DeviceSettings } from "../../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -38,7 +40,9 @@ describe("BehaviorPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<BehaviorPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <BehaviorPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -53,23 +57,38 @@ describe("BehaviorPanel", () => {
 
   it("calls onSettingsChange with stayAwake when toggled", () => {
     render(<BehaviorPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Stay Awake").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Stay Awake")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ stayAwake: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      stayAwake: true,
+    });
   });
 
   it("calls onSettingsChange with showTouches when toggled", () => {
     render(<BehaviorPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Show Touches").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Show Touches")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ showTouches: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      showTouches: true,
+    });
   });
 
   it("calls onSettingsChange with turnScreenOff when toggled", () => {
     render(<BehaviorPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Turn Screen Off").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Turn Screen Off")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ turnScreenOff: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      turnScreenOff: true,
+    });
   });
 
   it("reflects current settings values in checkboxes", () => {
@@ -79,8 +98,14 @@ describe("BehaviorPanel", () => {
         settings={settings({ stayAwake: true, showTouches: true })}
       />,
     );
-    const stayAwakeCheckbox = screen.getByText("Stay Awake").closest("label")!.querySelector("input")!;
-    const showTouchesCheckbox = screen.getByText("Show Touches").closest("label")!.querySelector("input")!;
+    const stayAwakeCheckbox = screen
+      .getByText("Stay Awake")
+      .closest("label")!
+      .querySelector("input")!;
+    const showTouchesCheckbox = screen
+      .getByText("Show Touches")
+      .closest("label")!
+      .querySelector("input")!;
     expect(stayAwakeCheckbox.checked).toBe(true);
     expect(showTouchesCheckbox.checked).toBe(true);
   });
@@ -94,7 +119,9 @@ describe("BehaviorPanel", () => {
         />,
       );
       expect(
-        screen.getByText("Camera mode disables device control — some behavior options will be skipped."),
+        screen.getByText(
+          "Camera mode disables device control — some behavior options will be skipped.",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -106,7 +133,9 @@ describe("BehaviorPanel", () => {
         />,
       );
       expect(
-        screen.getByText("Read-only mode — some behavior options will be skipped."),
+        screen.getByText(
+          "Read-only mode — some behavior options will be skipped.",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -126,7 +155,10 @@ describe("BehaviorPanel", () => {
           onSettingsChange={onChange}
         />,
       );
-      const checkbox = screen.getByText("Stay Awake").closest("label")!.querySelector("input")!;
+      const checkbox = screen
+        .getByText("Stay Awake")
+        .closest("label")!
+        .querySelector("input")!;
       expect(checkbox.disabled).toBe(false);
       fireEvent.click(checkbox);
       expect(onChange).toHaveBeenCalledWith({ stayAwake: true });
@@ -140,10 +172,14 @@ describe("BehaviorPanel", () => {
         />,
       );
       expect(
-        screen.getByText("Camera mode disables device control — some behavior options will be skipped."),
+        screen.getByText(
+          "Camera mode disables device control — some behavior options will be skipped.",
+        ),
       ).toBeInTheDocument();
       expect(
-        screen.queryByText("Read-only mode — some behavior options will be skipped."),
+        screen.queryByText(
+          "Read-only mode — some behavior options will be skipped.",
+        ),
       ).not.toBeInTheDocument();
     });
   });

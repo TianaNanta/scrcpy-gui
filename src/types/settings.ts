@@ -168,13 +168,22 @@ export interface Preset extends Omit<
 }
 
 /** Apply defaults for new fields when loading old presets from localStorage */
-export function migratePreset(raw: Partial<Preset> & { id: string; name: string }): Preset {
-  const { recordingEnabled: _re, recordFile: _rf, recordFormat: _rfmt, ...defaults } = DEFAULT_DEVICE_SETTINGS;
+export function migratePreset(
+  raw: Partial<Preset> & { id: string; name: string },
+): Preset {
+  const {
+    recordingEnabled: _re,
+    recordFile: _rf,
+    recordFormat: _rfmt,
+    ...defaults
+  } = DEFAULT_DEVICE_SETTINGS;
   return { ...defaults, ...raw } as Preset;
 }
 
 /** Apply defaults for new fields when loading old device settings from localStorage */
-export function migrateDeviceSettings(raw: Partial<DeviceSettings>): DeviceSettings {
+export function migrateDeviceSettings(
+  raw: Partial<DeviceSettings>,
+): DeviceSettings {
   return { ...DEFAULT_DEVICE_SETTINGS, ...raw };
 }
 

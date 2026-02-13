@@ -5,11 +5,17 @@ import type { ColorScheme, Theme } from "../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  AdjustmentsHorizontalIcon: (props: Record<string, unknown>) => <span data-testid="adjust-icon" {...props} />,
+  AdjustmentsHorizontalIcon: (props: Record<string, unknown>) => (
+    <span data-testid="adjust-icon" {...props} />
+  ),
 }));
 
 describe("SettingsPage", () => {
-  const defaultScheme: ColorScheme = { name: "Blue", primary: "#3b82f6", primaryHover: "#2563eb" };
+  const defaultScheme: ColorScheme = {
+    name: "Blue",
+    primary: "#3b82f6",
+    primaryHover: "#2563eb",
+  };
   const defaultProps = {
     theme: "dark" as Theme,
     colorScheme: defaultScheme,
@@ -67,7 +73,11 @@ describe("SettingsPage", () => {
 });
 
 describe("applySettings sets color-scheme on document root", () => {
-  const scheme: ColorScheme = { name: "Blue", primary: "#3b82f6", primaryHover: "#2563eb" };
+  const scheme: ColorScheme = {
+    name: "Blue",
+    primary: "#3b82f6",
+    primaryHover: "#2563eb",
+  };
 
   afterEach(() => {
     // Clean up inline styles set during tests
@@ -75,11 +85,16 @@ describe("applySettings sets color-scheme on document root", () => {
     document.documentElement.removeAttribute("data-theme");
   });
 
-  function applySettings(theme: Theme, colorScheme: ColorScheme, fontSize: number) {
+  function applySettings(
+    theme: Theme,
+    colorScheme: ColorScheme,
+    fontSize: number,
+  ) {
     const root = document.documentElement;
     const isDark =
       theme === "dark" ||
-      (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      (theme === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
 
     root.style.setProperty("color-scheme", isDark ? "dark" : "light");
     root.setAttribute("data-theme", isDark ? "dark" : "light");
@@ -92,13 +107,17 @@ describe("applySettings sets color-scheme on document root", () => {
 
   it("sets color-scheme to dark for dark theme", () => {
     applySettings("dark", scheme, 16);
-    expect(document.documentElement.style.getPropertyValue("color-scheme")).toBe("dark");
+    expect(
+      document.documentElement.style.getPropertyValue("color-scheme"),
+    ).toBe("dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
   it("sets color-scheme to light for light theme", () => {
     applySettings("light", scheme, 16);
-    expect(document.documentElement.style.getPropertyValue("color-scheme")).toBe("light");
+    expect(
+      document.documentElement.style.getPropertyValue("color-scheme"),
+    ).toBe("light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 

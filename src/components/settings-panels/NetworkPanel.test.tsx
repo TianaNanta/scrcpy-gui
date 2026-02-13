@@ -6,7 +6,9 @@ import type { DeviceSettings } from "../../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -38,7 +40,9 @@ describe("NetworkPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<NetworkPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <NetworkPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -51,15 +55,25 @@ describe("NetworkPanel", () => {
 
   it("calls onSettingsChange when noCleanup is toggled", () => {
     render(<NetworkPanel {...defaultProps} />);
-    const checkbox = screen.getByText("No Cleanup").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("No Cleanup")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ noCleanup: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      noCleanup: true,
+    });
   });
 
   it("calls onSettingsChange when forceAdbForward is toggled", () => {
     render(<NetworkPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Force ADB Forward").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Force ADB Forward")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ forceAdbForward: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      forceAdbForward: true,
+    });
   });
 });

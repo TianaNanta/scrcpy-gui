@@ -1,0 +1,161 @@
+/**
+ * BatteryBadge Styles
+ */
+
+.battery-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+
+.battery-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.battery-badge:active {
+  transform: translateY(0);
+}
+
+/* Good battery (>10%) */
+.battery-badge.battery-good {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.battery-badge.battery-good:hover {
+  background-color: rgba(76, 175, 80, 0.25);
+}
+
+/* Warning battery (5-10%) */
+.battery-badge.battery-warning {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: #e65100;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.battery-badge.battery-warning:hover {
+  background-color: rgba(255, 152, 0, 0.25);
+}
+
+/* Critical battery (<=5%) */
+.battery-badge.battery-critical {
+  background-color: rgba(244, 67, 54, 0.15);
+  color: #b71c1c;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  animation: pulse-critical 0.8s ease-in-out infinite;
+}
+
+.battery-badge.battery-critical:hover {
+  background-color: rgba(244, 67, 54, 0.25);
+}
+
+/* Icon styles */
+.battery-icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+.battery-percentage {
+  min-width: 2rem;
+  text-align: right;
+}
+
+/* Charging indicator */
+.battery-charging {
+  font-size: 0.8rem;
+  animation: blink 1s ease-in-out infinite;
+}
+
+/* Tooltip */
+.battery-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-secondary, #2a2a2a);
+  border: 1px solid var(--color-border, #444);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--color-text, #e0e0e0);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.battery-badge:hover .battery-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tooltip-line {
+  margin: 0.25rem 0;
+}
+
+.tooltip-line:first-child {
+  margin-top: 0;
+}
+
+/* Animations */
+@keyframes pulse-warning {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-critical {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .battery-badge.battery-good {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+  }
+
+  .battery-badge.battery-warning {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ffb74d;
+  }
+
+  .battery-badge.battery-critical {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #ef5350;
+  }
+}

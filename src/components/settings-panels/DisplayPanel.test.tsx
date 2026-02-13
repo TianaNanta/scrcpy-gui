@@ -6,7 +6,9 @@ import type { DeviceSettings } from "../../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -38,7 +40,9 @@ describe("DisplayPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<DisplayPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <DisplayPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -46,21 +50,35 @@ describe("DisplayPanel", () => {
 
   it("shows warning when camera source is selected", () => {
     render(
-      <DisplayPanel {...defaultProps} settings={settings({ videoSource: "camera" })} />,
+      <DisplayPanel
+        {...defaultProps}
+        settings={settings({ videoSource: "camera" })}
+      />,
     );
-    expect(screen.getByText(/not available in camera mode/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/not available in camera mode/),
+    ).toBeInTheDocument();
   });
 
   it("shows warning when virtual display is enabled", () => {
     render(
-      <DisplayPanel {...defaultProps} settings={settings({ virtualDisplay: true })} />,
+      <DisplayPanel
+        {...defaultProps}
+        settings={settings({ virtualDisplay: true })}
+      />,
     );
-    expect(screen.getByText(/not available when virtual display/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/not available when virtual display/),
+    ).toBeInTheDocument();
   });
 
   it("does not show warning in normal display mode", () => {
     render(<DisplayPanel {...defaultProps} />);
-    expect(screen.queryByText(/not available in camera mode/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/not available when virtual display/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/not available in camera mode/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/not available when virtual display/),
+    ).not.toBeInTheDocument();
   });
 });

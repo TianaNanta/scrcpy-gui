@@ -1,5 +1,9 @@
 /** Connection status as reported by ADB or synthesized by the app */
-export type DeviceStatus = "device" | "offline" | "unauthorized" | "disconnected";
+export type DeviceStatus =
+  | "device"
+  | "offline"
+  | "unauthorized"
+  | "disconnected";
 
 /** Device information returned from the persistent registry */
 export interface Device {

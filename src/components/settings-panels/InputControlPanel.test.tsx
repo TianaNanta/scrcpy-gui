@@ -6,7 +6,9 @@ import type { DeviceSettings } from "../../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -40,7 +42,9 @@ describe("InputControlPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<InputControlPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <InputControlPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -68,7 +72,9 @@ describe("InputControlPanel", () => {
 
   it("disables gamepad select when canGamepad is false", () => {
     render(<InputControlPanel {...defaultProps} canGamepad={false} />);
-    expect(screen.getByText(/Gamepad forwarding requires scrcpy ≥ 2.7/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Gamepad forwarding requires scrcpy ≥ 2.7/),
+    ).toBeInTheDocument();
   });
 
   it("calls onSettingsChange when keyboard mode is changed", () => {
@@ -76,7 +82,9 @@ describe("InputControlPanel", () => {
     const selects = screen.getAllByRole("combobox");
     // First select is keyboard mode
     fireEvent.change(selects[0], { target: { value: "uhid" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ keyboardMode: "uhid" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      keyboardMode: "uhid",
+    });
   });
 
   it("calls onSettingsChange when mouse mode is changed", () => {
@@ -84,7 +92,9 @@ describe("InputControlPanel", () => {
     const selects = screen.getAllByRole("combobox");
     // Second select is mouse mode
     fireEvent.change(selects[1], { target: { value: "aoa" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ mouseMode: "aoa" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      mouseMode: "aoa",
+    });
   });
 
   it("calls onSettingsChange when gamepad mode is changed", () => {
@@ -92,6 +102,8 @@ describe("InputControlPanel", () => {
     const selects = screen.getAllByRole("combobox");
     // Third select is gamepad mode
     fireEvent.change(selects[2], { target: { value: "uhid" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ gamepadMode: "uhid" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      gamepadMode: "uhid",
+    });
   });
 });

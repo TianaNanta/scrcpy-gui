@@ -56,7 +56,11 @@ export default function PresetManager({
             <div key={preset.id} className="preset-item">
               <span>{preset.name}</span>
               <div className="preset-actions">
-                <button className="btn btn-secondary" onClick={() => onLoadPreset(preset)} aria-label={`Load preset ${preset.name}`}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => onLoadPreset(preset)}
+                  aria-label={`Load preset ${preset.name}`}
+                >
                   Load
                 </button>
                 {onDeletePreset && (
@@ -72,7 +76,10 @@ export default function PresetManager({
             </div>
           ))}
           {presets.length === 0 && (
-            <p className="text-caption" style={{ textAlign: "center", padding: "var(--space-lg)" }}>
+            <p
+              className="text-caption"
+              style={{ textAlign: "center", padding: "var(--space-lg)" }}
+            >
               No presets saved yet. Configure your settings and save a preset.
             </p>
           )}

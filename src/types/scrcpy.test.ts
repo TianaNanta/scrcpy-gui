@@ -80,8 +80,11 @@ describe("feature gate helpers", () => {
   });
 
   describe("hasVirtualDisplay (≥3.0)", () => {
-    it("returns false for 2.9", () => expect(hasVirtualDisplay(v2_9)).toBe(false));
-    it("returns true for 3.0", () => expect(hasVirtualDisplay(v3_0)).toBe(true));
-    it("returns true for 3.3", () => expect(hasVirtualDisplay(v3_3)).toBe(true));
+    it("returns false for 2.9", () =>
+      expect(hasVirtualDisplay(v2_9)).toBe(false));
+    it("returns true for 3.0", () =>
+      expect(hasVirtualDisplay(v3_0)).toBe(true));
+    it("returns true for 3.3", () =>
+      expect(hasVirtualDisplay(v3_3)).toBe(true));
   });
 });

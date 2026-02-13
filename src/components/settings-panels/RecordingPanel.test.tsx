@@ -5,7 +5,9 @@ import { DEFAULT_DEVICE_SETTINGS } from "../../types/settings";
 import type { DeviceSettings } from "../../types/settings";
 
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -41,7 +43,9 @@ describe("RecordingPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<RecordingPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <RecordingPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -59,33 +63,60 @@ describe("RecordingPanel", () => {
   });
 
   it("does not show file/format options when recording is disabled", () => {
-    render(<RecordingPanel {...defaultProps} settings={settings({ recordingEnabled: false })} />);
+    render(
+      <RecordingPanel
+        {...defaultProps}
+        settings={settings({ recordingEnabled: false })}
+      />,
+    );
     expect(screen.queryByText("Output Filename:")).not.toBeInTheDocument();
     expect(screen.queryByText("Container format:")).not.toBeInTheDocument();
   });
 
   it("shows file/format options when recording is enabled", () => {
-    render(<RecordingPanel {...defaultProps} settings={settings({ recordingEnabled: true })} />);
+    render(
+      <RecordingPanel
+        {...defaultProps}
+        settings={settings({ recordingEnabled: true })}
+      />,
+    );
     expect(screen.getByText("Output Filename:")).toBeInTheDocument();
     expect(screen.getByText("Container format:")).toBeInTheDocument();
   });
 
   it("toggles recording enabled", () => {
     render(<RecordingPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Enable Recording").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Enable Recording")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ recordingEnabled: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      recordingEnabled: true,
+    });
   });
 
   it("changes record format", () => {
-    render(<RecordingPanel {...defaultProps} settings={settings({ recordingEnabled: true })} />);
+    render(
+      <RecordingPanel
+        {...defaultProps}
+        settings={settings({ recordingEnabled: true })}
+      />,
+    );
     const select = screen.getByDisplayValue("MP4");
     fireEvent.change(select, { target: { value: "mkv" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ recordFormat: "mkv" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      recordFormat: "mkv",
+    });
   });
 
   it("renders browse button when recording is enabled", () => {
-    render(<RecordingPanel {...defaultProps} settings={settings({ recordingEnabled: true })} />);
+    render(
+      <RecordingPanel
+        {...defaultProps}
+        settings={settings({ recordingEnabled: true })}
+      />,
+    );
     expect(screen.getByText("Browse")).toBeInTheDocument();
   });
 

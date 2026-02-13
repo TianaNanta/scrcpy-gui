@@ -12,7 +12,11 @@ import type {
   ColorScheme,
   Theme,
 } from "./types/settings";
-import { DEFAULT_DEVICE_SETTINGS, migrateDeviceSettings, migratePreset } from "./types/settings";
+import {
+  DEFAULT_DEVICE_SETTINGS,
+  migrateDeviceSettings,
+  migratePreset,
+} from "./types/settings";
 import {
   loadAllDeviceSettings,
   migrateDeviceNamesToSettings,
@@ -30,17 +34,26 @@ import PairDeviceModal from "./components/PairDeviceModal";
 import LogViewer from "./components/LogViewer";
 import PresetManager from "./components/PresetManager";
 import SettingsPage, { colorSchemes } from "./components/SettingsPage";
+import LoadingScreen from "./components/LoadingScreen";
 
 function App() {
   // Scrcpy version feature gates
   const scrcpyVersion = useScrcpyVersion();
-  const { canUhidInput, canAudio, canNoVideo, canCamera, canGamepad, canVirtualDisplay } = scrcpyVersion;
+  const {
+    canUhidInput,
+    canAudio,
+    canNoVideo,
+    canCamera,
+    canGamepad,
+    canVirtualDisplay,
+  } = scrcpyVersion;
 
   // Core state
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [dependencies, setDependencies] = useState<Dependencies | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [currentTab, setCurrentTab] = useState<Tab>("devices");
@@ -52,16 +65,24 @@ function App() {
   const [fontSize, setFontSize] = useState<number>(16);
 
   // Device settings & presets
-  const [allDeviceSettings, setAllDeviceSettings] = useState<Map<string, DeviceSettings>>(new Map());
+  const [allDeviceSettings, setAllDeviceSettings] = useState<
+    Map<string, DeviceSettings>
+  >(new Map());
   const [presets, setPresets] = useState<Preset[]>([]);
 
   // Derived device names from settings (no separate state)
-  const deviceNames = useMemo(() => deriveDeviceNames(allDeviceSettings), [allDeviceSettings]);
+  const deviceNames = useMemo(
+    () => deriveDeviceNames(allDeviceSettings),
+    [allDeviceSettings],
+  );
 
   // Device modal state
   const [showDeviceModal, setShowDeviceModal] = useState(false);
-  const [selectedDeviceForSettings, setSelectedDeviceForSettings] = useState<string>("");
-  const [currentSettings, setCurrentSettings] = useState<DeviceSettings>(DEFAULT_DEVICE_SETTINGS);
+  const [selectedDeviceForSettings, setSelectedDeviceForSettings] =
+    useState<string>("");
+  const [currentSettings, setCurrentSettings] = useState<DeviceSettings>(
+    DEFAULT_DEVICE_SETTINGS,
+  );
 
   // Pair modal state
   const [showPairModal, setShowPairModal] = useState(false);
@@ -76,7 +97,9 @@ function App() {
 
   // Device list search/filter
   const [deviceSearch, setDeviceSearch] = useState("");
-  const [deviceFilter, setDeviceFilter] = useState<"all" | "usb" | "wireless">("all");
+  const [deviceFilter, setDeviceFilter] = useState<"all" | "usb" | "wireless">(
+    "all",
+  );
 
   // ─── Logging ─────────────────────────────────────────────────────────
 
@@ -94,14 +117,18 @@ function App() {
       const root = document.documentElement;
       const isDark =
         newTheme === "dark" ||
-        (newTheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        (newTheme === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
 
       // Set color-scheme for native form controls (selects, scrollbars, etc.)
       root.style.setProperty("color-scheme", isDark ? "dark" : "light");
       root.setAttribute("data-theme", isDark ? "dark" : "light");
 
       if (isDark) {
-        root.style.setProperty("--background", "linear-gradient(135deg, #1e293b 0%, #334155 100%)");
+        root.style.setProperty(
+          "--background",
+          "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+        );
         root.style.setProperty("--surface", "rgba(30, 41, 59, 0.95)");
         root.style.setProperty("--text-primary", "#f1f5f9");
         root.style.setProperty("--text-secondary", "#94a3b8");
@@ -115,8 +142,14 @@ function App() {
         // Shadow tokens (dark — higher opacity)
         root.style.setProperty("--shadow-subtle", "0 1px 2px rgba(0,0,0,0.20)");
         root.style.setProperty("--shadow-medium", "0 2px 8px rgba(0,0,0,0.30)");
-        root.style.setProperty("--shadow-elevated", "0 8px 24px rgba(0,0,0,0.40)");
-        root.style.setProperty("--shadow-floating", "0 16px 48px rgba(0,0,0,0.50)");
+        root.style.setProperty(
+          "--shadow-elevated",
+          "0 8px 24px rgba(0,0,0,0.40)",
+        );
+        root.style.setProperty(
+          "--shadow-floating",
+          "0 16px 48px rgba(0,0,0,0.50)",
+        );
         // Status colors (dark)
         root.style.setProperty("--status-success-bg", "hsl(145, 40%, 18%)");
         root.style.setProperty("--status-success-text", "hsl(145, 60%, 65%)");
@@ -127,7 +160,10 @@ function App() {
         root.style.setProperty("--status-info-bg", "hsl(210, 40%, 18%)");
         root.style.setProperty("--status-info-text", "hsl(210, 60%, 65%)");
       } else {
-        root.style.setProperty("--background", "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)");
+        root.style.setProperty(
+          "--background",
+          "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+        );
         root.style.setProperty("--surface", "rgba(255, 255, 255, 0.95)");
         root.style.setProperty("--text-primary", "#1f2937");
         root.style.setProperty("--text-secondary", "#6b7280");
@@ -141,8 +177,14 @@ function App() {
         // Shadow tokens (light)
         root.style.setProperty("--shadow-subtle", "0 1px 2px rgba(0,0,0,0.06)");
         root.style.setProperty("--shadow-medium", "0 2px 8px rgba(0,0,0,0.10)");
-        root.style.setProperty("--shadow-elevated", "0 8px 24px rgba(0,0,0,0.12)");
-        root.style.setProperty("--shadow-floating", "0 16px 48px rgba(0,0,0,0.16)");
+        root.style.setProperty(
+          "--shadow-elevated",
+          "0 8px 24px rgba(0,0,0,0.12)",
+        );
+        root.style.setProperty(
+          "--shadow-floating",
+          "0 16px 48px rgba(0,0,0,0.16)",
+        );
         // Status colors (light)
         root.style.setProperty("--status-success-bg", "hsl(145, 65%, 92%)");
         root.style.setProperty("--status-success-text", "hsl(145, 70%, 28%)");
@@ -155,7 +197,14 @@ function App() {
       }
       root.style.setProperty("--primary-color", newColorScheme.primary);
       root.style.setProperty("--primary-hover", newColorScheme.primaryHover);
-      root.style.setProperty("--primary-color-rgb", newColorScheme.primary.replace("#", "").match(/.{2}/g)?.map(h => parseInt(h, 16)).join(", ") || "59, 130, 246");
+      root.style.setProperty(
+        "--primary-color-rgb",
+        newColorScheme.primary
+          .replace("#", "")
+          .match(/.{2}/g)
+          ?.map((h) => parseInt(h, 16))
+          .join(", ") || "59, 130, 246",
+      );
       root.style.setProperty("--font-size", `${newFontSize}px`);
     },
     [],
@@ -186,10 +235,15 @@ function App() {
     setAllDeviceSettings(migrated);
 
     // Load UI settings
-    const savedTheme = (localStorage.getItem("scrcpy-theme") as Theme) || "system";
+    const savedTheme =
+      (localStorage.getItem("scrcpy-theme") as Theme) || "system";
     const savedCSName = localStorage.getItem("scrcpy-colorScheme") || "Blue";
-    const savedFS = parseInt(localStorage.getItem("scrcpy-fontSize") || "16", 10);
-    const savedCS = colorSchemes.find((s) => s.name === savedCSName) || colorSchemes[0];
+    const savedFS = parseInt(
+      localStorage.getItem("scrcpy-fontSize") || "16",
+      10,
+    );
+    const savedCS =
+      colorSchemes.find((s) => s.name === savedCSName) || colorSchemes[0];
     setTheme(savedTheme);
     setColorScheme(savedCS);
     setFontSize(savedFS);
@@ -200,9 +254,11 @@ function App() {
       "scrcpy-log",
       (event) => {
         const { serial, line } = event.payload;
-        const level: LogLevel = line.toLowerCase().includes("error") ? "ERROR"
-          : line.toLowerCase().includes("warn") ? "WARN"
-          : "INFO";
+        const level: LogLevel = line.toLowerCase().includes("error")
+          ? "ERROR"
+          : line.toLowerCase().includes("warn")
+            ? "WARN"
+            : "INFO";
         setLogs((prev) => [
           ...prev,
           {
@@ -220,13 +276,19 @@ function App() {
       (event) => {
         const { serial, exitCode } = event.payload;
         setActiveDevices((prev) => prev.filter((s) => s !== serial));
-        const msg = exitCode !== null && exitCode !== 0
-          ? `Scrcpy exited for ${serial} with code ${exitCode}`
-          : `Scrcpy exited for ${serial}`;
-        const logLevel: LogLevel = exitCode !== null && exitCode !== 0 ? "ERROR" : "INFO";
+        const msg =
+          exitCode !== null && exitCode !== 0
+            ? `Scrcpy exited for ${serial} with code ${exitCode}`
+            : `Scrcpy exited for ${serial}`;
+        const logLevel: LogLevel =
+          exitCode !== null && exitCode !== 0 ? "ERROR" : "INFO";
         setLogs((prev) => [
           ...prev,
-          { timestamp: new Date().toISOString(), level: logLevel, message: msg },
+          {
+            timestamp: new Date().toISOString(),
+            level: logLevel,
+            message: msg,
+          },
         ]);
       },
     );
@@ -276,7 +338,10 @@ function App() {
     try {
       const deps: Dependencies = await invoke("check_dependencies");
       setDependencies(deps);
-      addLog(`Dependencies checked: ADB=${deps.adb}, Scrcpy=${deps.scrcpy}`, "INFO");
+      addLog(
+        `Dependencies checked: ADB=${deps.adb}, Scrcpy=${deps.scrcpy}`,
+        "INFO",
+      );
     } catch (e) {
       addLog(`Failed to check dependencies: ${e}`, "ERROR");
     }
@@ -291,10 +356,33 @@ function App() {
         setSelectedDevice(devs[0].serial);
       }
       addLog(`Devices listed: ${devs.length} found`, "INFO");
+
+      // Start health polling for connected devices
+      const connectedDevices = devs
+        .filter(d => d.status === "device")
+        .map(d => d.serial);
+      
+      if (connectedDevices.length > 0) {
+        try {
+          // Try to start health polling (may fail if already running, which is OK)
+          await invoke("start_health_polling", {
+            device_ids: connectedDevices,
+          });
+          addLog(`Health polling started for ${connectedDevices.length} device(s)`, "INFO");
+        } catch (pollErr) {
+          // Only log as info since polling might already be running
+          const errString = String(pollErr);
+          if (!errString.includes("already running")) {
+            addLog(`Warning: Health polling issue: ${pollErr}`, "WARN");
+          }
+        }
+      }
     } catch (e) {
       addLog(`Failed to list devices: ${e}`, "ERROR");
     } finally {
       setRefreshing(false);
+      // Mark initialization complete once devices are first loaded
+      setIsInitializing(false);
     }
   }
 
@@ -320,7 +408,10 @@ function App() {
     localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updated)));
   }
 
-  async function registerDevice(serial: string, name?: string): Promise<boolean> {
+  async function registerDevice(
+    serial: string,
+    name?: string,
+  ): Promise<boolean> {
     try {
       await invoke("register_device", { serial });
       if (name) {
@@ -337,33 +428,39 @@ function App() {
 
   // ─── Scrcpy process ──────────────────────────────────────────────────
 
-  async function waitForDevice(serial: string, maxWaitMs: number = 5000): Promise<boolean> {
+  async function waitForDevice(
+    serial: string,
+    maxWaitMs: number = 5000,
+  ): Promise<boolean> {
     const startTime = Date.now();
     while (Date.now() - startTime < maxWaitMs) {
       try {
         // Refresh device list
         const devs: Device[] = await invoke("list_devices");
         setDevices(devs);
-        
+
         // Check if the device with this serial exists and is connected
         const foundDevice = devs.find((d) => d.serial === serial);
         if (foundDevice && foundDevice.status === "device") {
           addLog(`Device ${serial} found and ready`, "SUCCESS");
           return true;
         }
-        
+
         // Wait a bit before retrying
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (e) {
         addLog(`Error checking for device: ${e}`, "WARN");
       }
     }
-    
+
     addLog(`Timeout waiting for device ${serial} to appear`, "ERROR");
     return false;
   }
 
-  async function startScrcpy(serial?: string, settingsOverride?: DeviceSettings) {
+  async function startScrcpy(
+    serial?: string,
+    settingsOverride?: DeviceSettings,
+  ) {
     const deviceSerial = serial || selectedDevice;
     if (!deviceSerial) return;
 
@@ -393,21 +490,31 @@ function App() {
           );
           setLoading(true);
           try {
-            const success = await updateWirelessConnection(deviceSerial, newIp, newPort);
+            const success = await updateWirelessConnection(
+              deviceSerial,
+              newIp,
+              newPort,
+            );
             if (!success) {
               addLog(`Failed to update wireless connection`, "ERROR");
               setLoading(false);
               return;
             }
-            
+
             // After successful update, use the new IP:Port as the serial
             actualSerial = `${newIp}:${newPort}`;
-            addLog(`Wireless connection updated. Waiting for device to be ready: ${actualSerial}`, "INFO");
-            
+            addLog(
+              `Wireless connection updated. Waiting for device to be ready: ${actualSerial}`,
+              "INFO",
+            );
+
             // Wait for the device to actually appear and be ready
             const deviceReady = await waitForDevice(actualSerial, 10000);
             if (!deviceReady) {
-              addLog(`Device ${actualSerial} did not become ready in time`, "ERROR");
+              addLog(
+                `Device ${actualSerial} did not become ready in time`,
+                "ERROR",
+              );
               setLoading(false);
               return;
             }
@@ -468,7 +575,10 @@ function App() {
       const updatedSettings = new Map(allDeviceSettings);
       updatedSettings.delete(serial);
       setAllDeviceSettings(updatedSettings);
-      localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updatedSettings)));
+      localStorage.setItem(
+        "deviceSettings",
+        JSON.stringify(Array.from(updatedSettings)),
+      );
       addLog(`Device forgotten: ${serial}`, "SUCCESS");
     } catch (e) {
       addLog(`Failed to forget device: ${e}`, "ERROR");
@@ -482,10 +592,19 @@ function App() {
       throw new Error("IP address is required");
     }
     setWirelessConnecting(true);
-    addLog(`Attempting wireless connection to ${deviceIp}:${devicePort}`, "INFO");
+    addLog(
+      `Attempting wireless connection to ${deviceIp}:${devicePort}`,
+      "INFO",
+    );
     try {
-      await invoke("connect_wireless_device", { ip: deviceIp.trim(), port: devicePort });
-      addLog(`Successfully connected to wireless device at ${deviceIp}:${devicePort}`, "SUCCESS");
+      await invoke("connect_wireless_device", {
+        ip: deviceIp.trim(),
+        port: devicePort,
+      });
+      addLog(
+        `Successfully connected to wireless device at ${deviceIp}:${devicePort}`,
+        "SUCCESS",
+      );
       return await registerDevice(`${deviceIp.trim()}:${devicePort}`, name);
     } catch (error) {
       addLog(`Failed to connect to wireless device: ${error}`, "ERROR");
@@ -495,7 +614,11 @@ function App() {
     }
   }
 
-  async function updateWirelessConnection(oldSerial: string, newIp: string, newPort: number) {
+  async function updateWirelessConnection(
+    oldSerial: string,
+    newIp: string,
+    newPort: number,
+  ) {
     if (!newIp.trim()) {
       addLog("IP address is required for wireless connection", "ERROR");
       return false;
@@ -517,26 +640,46 @@ function App() {
 
       // Connect to new device FIRST (before disconnecting old one)
       // This ensures we don't lose the old connection if the new one fails
-      addLog(`Connecting to new wireless device at ${newIp}:${newPort}`, "INFO");
+      addLog(
+        `Connecting to new wireless device at ${newIp}:${newPort}`,
+        "INFO",
+      );
       try {
-        await invoke("connect_wireless_device", { ip: newIp.trim(), port: newPort });
+        await invoke("connect_wireless_device", {
+          ip: newIp.trim(),
+          port: newPort,
+        });
         addLog(`Successfully connected to ${newIp}:${newPort}`, "SUCCESS");
       } catch (connectError) {
         // New connection failed - don't disconnect the old one
-        addLog(`Failed to connect to ${newIp}:${newPort}: ${connectError}`, "ERROR");
-        throw new Error(`Connection to ${newIp}:${newPort} failed. Old connection preserved.`);
+        addLog(
+          `Failed to connect to ${newIp}:${newPort}: ${connectError}`,
+          "ERROR",
+        );
+        throw new Error(
+          `Connection to ${newIp}:${newPort} failed. Old connection preserved.`,
+        );
       }
 
       // Only disconnect old connection after new one succeeds
-      addLog(`Disconnecting old wireless connection ${oldIp}:${oldPort}`, "INFO");
+      addLog(
+        `Disconnecting old wireless connection ${oldIp}:${oldPort}`,
+        "INFO",
+      );
       try {
-        await invoke("disconnect_wireless_device", { ip: oldIp, port: oldPort });
+        await invoke("disconnect_wireless_device", {
+          ip: oldIp,
+          port: oldPort,
+        });
         addLog(`Disconnected from ${oldIp}:${oldPort}`, "SUCCESS");
       } catch (disconnectError) {
         // If device is already disconnected or doesn't exist, that's fine
-        addLog(`Old device ${oldIp}:${oldPort} already disconnected or not found (this is OK)`, "WARN");
+        addLog(
+          `Old device ${oldIp}:${oldPort} already disconnected or not found (this is OK)`,
+          "WARN",
+        );
       }
-      
+
       // Transfer settings from old serial to new serial
       const newSerial = `${newIp}:${newPort}`;
       const oldSettings = allDeviceSettings.get(oldSerial);
@@ -545,30 +688,43 @@ function App() {
         // Remove old serial entry
         updatedSettings.delete(oldSerial);
         // Add new serial entry with same settings
-        updatedSettings.set(newSerial, { ...oldSettings, ipAddress: newIp, port: newPort });
+        updatedSettings.set(newSerial, {
+          ...oldSettings,
+          ipAddress: newIp,
+          port: newPort,
+        });
         setAllDeviceSettings(updatedSettings);
-        localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updatedSettings)));
-        addLog(`Transferred settings from ${oldSerial} to ${newSerial}`, "INFO");
+        localStorage.setItem(
+          "deviceSettings",
+          JSON.stringify(Array.from(updatedSettings)),
+        );
+        addLog(
+          `Transferred settings from ${oldSerial} to ${newSerial}`,
+          "INFO",
+        );
       }
-      
+
       // Forget the old device from the registry so it doesn't show in the list
       try {
         await invoke("forget_device", { serial: oldSerial });
         addLog(`Removed old device entry ${oldSerial} from registry`, "INFO");
       } catch (forgetError) {
         // Non-fatal if forget fails
-        addLog(`Could not remove old device entry (this is OK): ${forgetError}`, "WARN");
+        addLog(
+          `Could not remove old device entry (this is OK): ${forgetError}`,
+          "WARN",
+        );
       }
-      
+
       // Register the new device so it appears in the list
       const registered = await registerDevice(newSerial);
       if (!registered) {
         return false;
       }
-      
+
       // Update React state to remove old device immediately
       setDevices((prev) => prev.filter((d) => d.serial !== oldSerial));
-      
+
       return true;
     } catch (error) {
       addLog(`Failed to update wireless connection: ${error}`, "ERROR");
@@ -594,7 +750,10 @@ function App() {
     addLog(`Disconnecting wireless device ${ip}:${port}`, "INFO");
     try {
       await invoke("disconnect_wireless_device", { ip, port });
-      addLog(`Successfully disconnected wireless device ${ip}:${port}`, "SUCCESS");
+      addLog(
+        `Successfully disconnected wireless device ${ip}:${port}`,
+        "SUCCESS",
+      );
       listDevices();
     } catch (error) {
       addLog(`Failed to disconnect wireless device: ${error}`, "ERROR");
@@ -620,9 +779,12 @@ function App() {
     [allDeviceSettings],
   );
 
-  const handleSettingsChange = useCallback((updates: Partial<DeviceSettings>) => {
-    setCurrentSettings((prev) => ({ ...prev, ...updates }));
-  }, []);
+  const handleSettingsChange = useCallback(
+    (updates: Partial<DeviceSettings>) => {
+      setCurrentSettings((prev) => ({ ...prev, ...updates }));
+    },
+    [],
+  );
 
   const handleSaveSettings = useCallback(
     (settingsToSave: DeviceSettings) => {
@@ -630,7 +792,10 @@ function App() {
       const updated = new Map(allDeviceSettings);
       updated.set(selectedDeviceForSettings, settingsToSave);
       setAllDeviceSettings(updated);
-      localStorage.setItem("deviceSettings", JSON.stringify(Array.from(updated)));
+      localStorage.setItem(
+        "deviceSettings",
+        JSON.stringify(Array.from(updated)),
+      );
     },
     [selectedDeviceForSettings, allDeviceSettings],
   );
@@ -639,7 +804,7 @@ function App() {
     // Save settings (they'll be under old serial key initially)
     handleSaveSettings(currentSettings);
     await new Promise((resolve) => setTimeout(resolve, 50));
-    
+
     // Always pass the OLD serial to startScrcpy
     // It will detect IP/Port changes and handle the connection update
     startScrcpy(selectedDeviceForSettings, currentSettings);
@@ -650,7 +815,12 @@ function App() {
 
   const handleSavePreset = useCallback(
     (name: string) => {
-      const { recordingEnabled: _re, recordFile: _rf, recordFormat: _rfmt, ...rest } = currentSettings;
+      const {
+        recordingEnabled: _re,
+        recordFile: _rf,
+        recordFormat: _rfmt,
+        ...rest
+      } = currentSettings;
       const newPreset: Preset = { ...rest, id: Date.now().toString(), name };
       const updated = [...presets, newPreset];
       setPresets(updated);
@@ -659,14 +829,11 @@ function App() {
     [currentSettings, presets],
   );
 
-  const handleLoadPreset = useCallback(
-    (preset: Preset) => {
-      const migrated = migratePreset(preset);
-      const { id: _id, name: _name, ...fields } = migrated;
-      setCurrentSettings((prev) => ({ ...prev, ...fields }));
-    },
-    [],
-  );
+  const handleLoadPreset = useCallback((preset: Preset) => {
+    const migrated = migratePreset(preset);
+    const { id: _id, name: _name, ...fields } = migrated;
+    setCurrentSettings((prev) => ({ ...prev, ...fields }));
+  }, []);
 
   const handleDeletePreset = useCallback(
     (presetId: string) => {
@@ -739,7 +906,9 @@ function App() {
             )}
             {showDeviceModal && selectedDeviceForSettings && (
               <DeviceSettingsModal
-                device={devices.find((d) => d.serial === selectedDeviceForSettings)}
+                device={devices.find(
+                  (d) => d.serial === selectedDeviceForSettings,
+                )}
                 serial={selectedDeviceForSettings}
                 settings={currentSettings}
                 canUhidInput={canUhidInput}
@@ -794,6 +963,7 @@ function App() {
 
   return (
     <div className="app">
+      {isInitializing && <LoadingScreen message="Initializing scrcpy GUI..." />}
       <Sidebar
         currentTab={currentTab}
         onTabChange={setCurrentTab}

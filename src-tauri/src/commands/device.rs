@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::Stdio;
 use tauri::Manager;
 use tokio::process::Command;
@@ -35,7 +35,7 @@ struct AdbDevice {
 
 // ─── Registry I/O ──────────────────────────────────────────────────────────
 
-pub fn load_registry(app_data_dir: &PathBuf) -> Vec<DeviceInfo> {
+pub fn load_registry(app_data_dir: &Path) -> Vec<DeviceInfo> {
     let path = app_data_dir.join("devices.json");
     match fs::read_to_string(&path) {
         Ok(content) => serde_json::from_str(&content).unwrap_or_else(|e| {
@@ -46,14 +46,13 @@ pub fn load_registry(app_data_dir: &PathBuf) -> Vec<DeviceInfo> {
     }
 }
 
-pub fn save_registry(app_data_dir: &PathBuf, devices: &[DeviceInfo]) -> Result<(), String> {
+pub fn save_registry(app_data_dir: &Path, devices: &[DeviceInfo]) -> Result<(), String> {
     fs::create_dir_all(app_data_dir)
         .map_err(|e| format!("Failed to create data directory: {}", e))?;
     let path = app_data_dir.join("devices.json");
     let json = serde_json::to_string_pretty(devices)
         .map_err(|e| format!("Failed to serialize device registry: {}", e))?;
-    fs::write(&path, json)
-        .map_err(|e| format!("Failed to write device registry: {}", e))?;
+    fs::write(&path, json).map_err(|e| format!("Failed to write device registry: {}", e))?;
     Ok(())
 }
 
@@ -94,6 +93,26 @@ fn merge_devices(
             // Preserve cached metadata (model, android_version, battery_level)
             result.push(device);
         }
+    }
+
+    // Process new devices from ADB that aren't in the registry
+    for (serial, status) in adb_map {
+        let device = DeviceInfo {
+            serial: serial.clone(),
+            status: status.clone(),
+            first_seen: now.clone(),
+            last_seen: Some(now.clone()),
+            model: None,
+            android_version: None,
+            battery_level: None,
+            is_wireless: false,
+        };
+        
+        // Fetch props if device is newly connected
+        if status == "device" {
+            needs_props.push(serial);
+        }
+        result.push(device);
     }
 
     (result, needs_props)
