@@ -1,6 +1,6 @@
 [package]
 name = "scrcpy-gui"
-version = "0.5.3"
+version = "0.5.4"
 description = "A GUI to make easier for connecting phone using scrcpy "
 authors = ["TianaNanta"]
 edition = "2021"
