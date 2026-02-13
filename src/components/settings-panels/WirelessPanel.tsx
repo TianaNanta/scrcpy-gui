@@ -27,24 +27,28 @@ export default function WirelessPanel({
   // Parse current connection from serial
   const currentParts = currentSerial.split(":");
   const currentIp = currentParts.length === 2 ? currentParts[0] : "";
-  const currentPort = currentParts.length === 2 ? parseInt(currentParts[1], 10) : 5555;
+  const currentPort =
+    currentParts.length === 2 ? parseInt(currentParts[1], 10) : 5555;
 
   // Check if values have changed
-  const hasChanged = 
+  const hasChanged =
     (settings.ipAddress && settings.ipAddress.trim() !== currentIp) ||
     (settings.port && settings.port !== currentPort);
 
   return (
     <div className="settings-panel">
       <button
-        className={`panel-header${expanded ? ' expanded' : ''}`}
+        className={`panel-header${expanded ? " expanded" : ""}`}
         onClick={onToggle}
         aria-expanded={expanded}
       >
         <h4>Wireless Connection</h4>
         <ChevronDownIcon />
       </button>
-      <div className={`panel-content${expanded ? ' expanded' : ''}`} aria-hidden={!expanded}>
+      <div
+        className={`panel-content${expanded ? " expanded" : ""}`}
+        aria-hidden={!expanded}
+      >
         <div className="row">
           <label className="input-label">
             IP Address:
@@ -74,9 +78,7 @@ export default function WirelessPanel({
                 }
               }}
             />
-            <span className="hint">
-              Current connection: {currentPort}
-            </span>
+            <span className="hint">Current connection: {currentPort}</span>
           </label>
         </div>
         {hasChanged && onReconnect && (
@@ -85,8 +87,12 @@ export default function WirelessPanel({
               <ArrowPathIcon className="btn-icon" />
               Reconnect with New Address
             </button>
-            <span className="hint" style={{ marginTop: '8px', display: 'block' }}>
-              Click to disconnect from {currentIp}:{currentPort} and reconnect to {settings.ipAddress}:{settings.port}
+            <span
+              className="hint"
+              style={{ marginTop: "8px", display: "block" }}
+            >
+              Click to disconnect from {currentIp}:{currentPort} and reconnect
+              to {settings.ipAddress}:{settings.port}
             </span>
           </div>
         )}

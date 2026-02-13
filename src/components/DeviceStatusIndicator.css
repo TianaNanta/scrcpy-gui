@@ -1,0 +1,299 @@
+/**
+ * DeviceStatusIndicator Styles
+ * 
+ * Provides visual styling for device status indicators including:
+ * - Status dots with color coding and animations
+ * - Battery/storage warning indicators
+ * - Staleness indicators
+ * - Compact and expanded modes
+ */
+
+.device-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-bg-secondary, #f5f5f5);
+  border: 1px solid var(--color-border, #e0e0e0);
+  transition: all 0.2s ease;
+}
+
+.device-status-indicator:hover {
+  background: var(--color-bg-tertiary, #efefef);
+  border-color: var(--color-border-hover, #d0d0d0);
+}
+
+.device-status-indicator:active {
+  transform: scale(0.98);
+}
+
+/* Compact mode */
+.device-status-indicator.compact {
+  padding: 0;
+  background: transparent;
+  border: none;
+  gap: 0;
+}
+
+.device-status-indicator.compact:hover {
+  background: transparent;
+  border: none;
+}
+
+/* Status dot */
+.device-status-indicator .status-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.device-status-indicator.compact .status-dot {
+  width: 10px;
+  height: 10px;
+}
+
+/* Status colors */
+.device-status-indicator.status-online .status-dot {
+  background-color: #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+  animation: pulse-online 2s ease-in-out infinite;
+}
+
+.device-status-indicator.status-offline .status-dot {
+  background-color: #f44336;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.4);
+}
+
+.device-status-indicator.status-connecting .status-dot {
+  background-color: #ff9800;
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+  animation: pulse-connecting 1s ease-in-out infinite;
+}
+
+.device-status-indicator.status-error .status-dot {
+  background-color: #f44336;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.4);
+  animation: pulse-error 0.5s ease-in-out infinite;
+}
+
+.device-status-indicator.status-unknown .status-dot {
+  background-color: #9e9e9e;
+  box-shadow: 0 0 4px rgba(158, 158, 158, 0.4);
+}
+
+/* Animations */
+@keyframes pulse-online {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(76, 175, 80, 0.8);
+  }
+}
+
+@keyframes pulse-connecting {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 152, 0, 0.8);
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-error {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(244, 67, 54, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(244, 67, 54, 0.8);
+  }
+}
+
+/* Main status section */
+.device-status-indicator .status-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.device-status-indicator .status-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text, #333);
+}
+
+.device-status-indicator .status-updated {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+}
+
+/* Details section */
+.device-status-indicator .status-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #e0e0e0);
+}
+
+/* Detail items */
+.device-status-indicator .detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text, #333);
+}
+
+.device-status-indicator .detail-label {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.device-status-indicator .detail-value {
+  font-weight: 500;
+}
+
+.device-status-indicator .detail-status {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #666);
+  font-style: italic;
+}
+
+/* Battery warnings */
+.device-status-indicator .detail-item.battery {
+  transition: background-color 0.2s ease;
+}
+
+.device-status-indicator .detail-item.battery.warning-low {
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.device-status-indicator .detail-item.battery.warning-critical {
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+/* Storage details */
+.device-status-indicator .detail-item.storage {
+  flex: 0 1 150px;
+}
+
+.device-status-indicator .storage-bar {
+  width: 100px;
+  height: 4px;
+  background: var(--color-bg-tertiary, #e0e0e0);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.device-status-indicator .storage-used {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+  transition: width 0.3s ease;
+}
+
+.device-status-indicator .detail-item.storage.warning-low .storage-used {
+  background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+}
+
+.device-status-indicator .detail-item.storage.warning-critical .storage-used {
+  background: linear-gradient(90deg, #f44336 0%, #ff5722 100%);
+}
+
+/* Error message */
+.device-status-indicator .status-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 0.25rem;
+  color: #c62828;
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
+.device-status-indicator .status-error-message::before {
+  content: "⚠️";
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .device-status-indicator {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .device-status-indicator .status-details {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+  }
+
+  .device-status-indicator .detail-item.storage {
+    flex: 0 1 auto;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .device-status-indicator {
+    background: var(--color-bg-secondary, #2a2a2a);
+    border-color: var(--color-border, #444);
+  }
+
+  .device-status-indicator:hover {
+    background: var(--color-bg-tertiary, #333);
+    border-color: var(--color-border-hover, #555);
+  }
+
+  .device-status-indicator .status-text {
+    color: var(--color-text, #e0e0e0);
+  }
+
+  .device-status-indicator .status-updated {
+    color: var(--color-text-secondary, #999);
+  }
+
+  .device-status-indicator .detail-item {
+    color: var(--color-text, #e0e0e0);
+  }
+
+  .device-status-indicator .detail-status {
+    color: var(--color-text-secondary, #999);
+  }
+
+  .device-status-indicator .storage-bar {
+    background: var(--color-bg-tertiary, #444);
+  }
+
+  .device-status-indicator .status-details {
+    border-top-color: var(--color-border, #444);
+  }
+}

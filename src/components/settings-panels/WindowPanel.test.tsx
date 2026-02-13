@@ -5,7 +5,9 @@ import { DEFAULT_DEVICE_SETTINGS } from "../../types/settings";
 import type { DeviceSettings } from "../../types/settings";
 
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -37,7 +39,9 @@ describe("WindowPanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<WindowPanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <WindowPanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -53,55 +57,80 @@ describe("WindowPanel", () => {
     render(<WindowPanel {...defaultProps} />);
     const input = screen.getByPlaceholderText("X");
     fireEvent.change(input, { target: { value: "100" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ windowX: 100 });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      windowX: 100,
+    });
   });
 
   it("changes window Y position", () => {
     render(<WindowPanel {...defaultProps} />);
     const input = screen.getByPlaceholderText("Y");
     fireEvent.change(input, { target: { value: "200" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ windowY: 200 });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      windowY: 200,
+    });
   });
 
   it("changes window width", () => {
     render(<WindowPanel {...defaultProps} />);
     const input = screen.getByPlaceholderText("Width");
     fireEvent.change(input, { target: { value: "800" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ windowWidth: 800 });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      windowWidth: 800,
+    });
   });
 
   it("changes window height", () => {
     render(<WindowPanel {...defaultProps} />);
     const input = screen.getByPlaceholderText("Height");
     fireEvent.change(input, { target: { value: "600" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ windowHeight: 600 });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      windowHeight: 600,
+    });
   });
 
   it("toggles always on top", () => {
     render(<WindowPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Always on Top").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Always on Top")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ alwaysOnTop: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      alwaysOnTop: true,
+    });
   });
 
   it("toggles borderless window", () => {
     render(<WindowPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Borderless Window").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Borderless Window")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ windowBorderless: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      windowBorderless: true,
+    });
   });
 
   it("changes window title", () => {
     render(<WindowPanel {...defaultProps} />);
     const input = screen.getByPlaceholderText("Default (device model)");
     fireEvent.change(input, { target: { value: "My Device" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ windowTitle: "My Device" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      windowTitle: "My Device",
+    });
   });
 
   it("toggles fullscreen", () => {
     render(<WindowPanel {...defaultProps} />);
-    const checkbox = screen.getByText("Fullscreen Mode").closest("label")!.querySelector("input")!;
+    const checkbox = screen
+      .getByText("Fullscreen Mode")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ fullscreen: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      fullscreen: true,
+    });
   });
 });

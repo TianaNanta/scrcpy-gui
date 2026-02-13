@@ -50,7 +50,8 @@ export default function PairDeviceModal({
 }: PairDeviceModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("idle");
   const [connectionMessage, setConnectionMessage] = useState("");
   const [ipError, setIpError] = useState("");
   const [usbAdding, setUsbAdding] = useState(false);
@@ -58,7 +59,7 @@ export default function PairDeviceModal({
   useEffect(() => {
     triggerRef.current = document.activeElement;
     const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     firstFocusable?.focus();
     return () => {
@@ -74,7 +75,7 @@ export default function PairDeviceModal({
       }
       if (e.key !== "Tab") return;
       const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       if (!focusable || focusable.length === 0) return;
       const first = focusable[0];
@@ -110,10 +111,16 @@ export default function PairDeviceModal({
         <div className="modal-body">
           {!pairMode ? (
             <div className="pair-options">
-              <button className="btn btn-primary" onClick={() => onSetPairMode("usb")}>
+              <button
+                className="btn btn-primary"
+                onClick={() => onSetPairMode("usb")}
+              >
                 Connect via USB
               </button>
-              <button className="btn btn-primary" onClick={() => onSetPairMode("wireless")}>
+              <button
+                className="btn btn-primary"
+                onClick={() => onSetPairMode("wireless")}
+              >
                 Connect via Wireless
               </button>
             </div>
@@ -137,7 +144,9 @@ export default function PairDeviceModal({
                 disabled={usbLoading || usbAdding}
               >
                 <option value="">
-                  {usbLoading ? "Detecting USB devices..." : "Select USB device"}
+                  {usbLoading
+                    ? "Detecting USB devices..."
+                    : "Select USB device"}
                 </option>
                 {availableUsbDevices
                   .filter((d) => d.status === "device" && !d.is_wireless)
@@ -152,7 +161,10 @@ export default function PairDeviceModal({
                 onClick={async () => {
                   if (!selectedUsbDevice) return;
                   setUsbAdding(true);
-                  const added = await onAddUsbDevice(selectedUsbDevice, deviceName);
+                  const added = await onAddUsbDevice(
+                    selectedUsbDevice,
+                    deviceName,
+                  );
                   setUsbAdding(false);
                   if (added) {
                     onClose();

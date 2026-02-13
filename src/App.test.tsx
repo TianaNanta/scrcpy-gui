@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import App from "./App";
 
 // ─── Mock Tauri APIs ─────────────────────────────────────────────────
@@ -145,7 +151,10 @@ describe("App — modal launch settings override (T060)", () => {
       );
       expect(startScrcpyCalls).toHaveLength(1);
 
-      const [, payload] = startScrcpyCalls[0] as [string, { serial: string; args: string[] }];
+      const [, payload] = startScrcpyCalls[0] as [
+        string,
+        { serial: string; args: string[] },
+      ];
       expect(payload.serial).toBe("TEST123");
       expect(payload.args).toContain("--video-source=camera");
     });
@@ -189,10 +198,47 @@ describe("App — modal launch settings override (T060)", () => {
       );
       expect(startScrcpyCalls).toHaveLength(1);
 
-      const [, payload] = startScrcpyCalls[0] as [string, { serial: string; args: string[] }];
+      const [, payload] = startScrcpyCalls[0] as [
+        string,
+        { serial: string; args: string[] },
+      ];
       expect(payload.serial).toBe("TEST123");
       // Default videoSource is "display", which means --video-source=camera should NOT be present
       expect(payload.args).not.toContain("--video-source=camera");
     });
+  });
+});
+
+describe("App — devices list refresh (T074)", () => {
+  it("refreshes device list and renders device card", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("TEST123")).toBeInTheDocument();
+    });
+
+    mockInvoke.mockClear();
+    mockInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "list_devices") {
+        return [TEST_DEVICE];
+      }
+      return undefined;
+    });
+
+    const refreshBtn = screen.getByRole("button", { name: /refresh list/i });
+    await act(async () => {
+      fireEvent.click(refreshBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("list_devices");
+    });
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

@@ -5,15 +5,16 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import {
-  CheckCircleIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/solid";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import type { Dependencies } from "../types/device";
 
 export type Tab = "devices" | "presets" | "logs" | "settings";
 
-const tabs: { id: Tab; name: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }[] = [
+const tabs: {
+  id: Tab;
+  name: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}[] = [
   { id: "devices", name: "Devices", icon: DevicePhoneMobileIcon },
   { id: "presets", name: "Presets", icon: DocumentTextIcon },
   { id: "logs", name: "Logs", icon: Bars3Icon },
@@ -50,7 +51,9 @@ export default function Sidebar({
     }
     e.preventDefault();
     onTabChange(tabs[nextIndex].id);
-    const buttons = (e.currentTarget.parentElement as HTMLElement)?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    const buttons = (
+      e.currentTarget.parentElement as HTMLElement
+    )?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     buttons?.[nextIndex]?.focus();
   };
 
@@ -88,13 +91,17 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <div className="dependency-status">
           <div className="dependency-item">
-            <span className={`dep-badge ${dependencies?.adb ? "ready" : "not-ready"}`}>
+            <span
+              className={`dep-badge ${dependencies?.adb ? "ready" : "not-ready"}`}
+            >
               {dependencies?.adb ? <CheckCircleIcon /> : <XCircleIcon />}
               ADB
             </span>
           </div>
           <div className="dependency-item">
-            <span className={`dep-badge ${dependencies?.scrcpy ? "ready" : "not-ready"}`}>
+            <span
+              className={`dep-badge ${dependencies?.scrcpy ? "ready" : "not-ready"}`}
+            >
               {dependencies?.scrcpy ? <CheckCircleIcon /> : <XCircleIcon />}
               Scrcpy
             </span>

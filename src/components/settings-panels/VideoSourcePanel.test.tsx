@@ -5,7 +5,9 @@ import { DEFAULT_DEVICE_SETTINGS } from "../../types/settings";
 import type { DeviceSettings } from "../../types/settings";
 
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const settings = (overrides: Partial<DeviceSettings> = {}): DeviceSettings => ({
@@ -38,7 +40,9 @@ describe("VideoSourcePanel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<VideoSourcePanel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <VideoSourcePanel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -52,12 +56,16 @@ describe("VideoSourcePanel", () => {
 
   it("shows version warning when canCamera is false", () => {
     render(<VideoSourcePanel {...defaultProps} canCamera={false} />);
-    expect(screen.getByText(/Camera mirroring requires scrcpy ≥ 2.2/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Camera mirroring requires scrcpy ≥ 2.2/),
+    ).toBeInTheDocument();
   });
 
   it("does not show version warning when canCamera is true", () => {
     render(<VideoSourcePanel {...defaultProps} canCamera={true} />);
-    expect(screen.queryByText(/Camera mirroring requires/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Camera mirroring requires/),
+    ).not.toBeInTheDocument();
   });
 
   it("shows camera option when canCamera is true", () => {
@@ -67,18 +75,30 @@ describe("VideoSourcePanel", () => {
 
   it("does not show camera option when canCamera is false", () => {
     render(<VideoSourcePanel {...defaultProps} canCamera={false} />);
-    expect(screen.queryByRole("option", { name: "Camera" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "Camera" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not show camera fields when display is selected", () => {
-    render(<VideoSourcePanel {...defaultProps} settings={settings({ videoSource: "display" })} />);
+    render(
+      <VideoSourcePanel
+        {...defaultProps}
+        settings={settings({ videoSource: "display" })}
+      />,
+    );
     expect(screen.queryByText("Camera Facing:")).not.toBeInTheDocument();
     expect(screen.queryByText("Camera Size:")).not.toBeInTheDocument();
     expect(screen.queryByText("Camera ID:")).not.toBeInTheDocument();
   });
 
   it("shows camera fields when camera is selected", () => {
-    render(<VideoSourcePanel {...defaultProps} settings={settings({ videoSource: "camera" })} />);
+    render(
+      <VideoSourcePanel
+        {...defaultProps}
+        settings={settings({ videoSource: "camera" })}
+      />,
+    );
     expect(screen.getByText("Camera Facing:")).toBeInTheDocument();
     expect(screen.getByText("Camera Size:")).toBeInTheDocument();
     expect(screen.getByText("Camera ID:")).toBeInTheDocument();
@@ -94,7 +114,12 @@ describe("VideoSourcePanel", () => {
   });
 
   it("resets camera fields when switching back to display", () => {
-    render(<VideoSourcePanel {...defaultProps} settings={settings({ videoSource: "camera" })} />);
+    render(
+      <VideoSourcePanel
+        {...defaultProps}
+        settings={settings({ videoSource: "camera" })}
+      />,
+    );
     const select = screen.getByDisplayValue("Camera");
     fireEvent.change(select, { target: { value: "display" } });
     expect(defaultProps.onSettingsChange).toHaveBeenCalledWith(
@@ -108,23 +133,44 @@ describe("VideoSourcePanel", () => {
   });
 
   it("changes camera facing", () => {
-    render(<VideoSourcePanel {...defaultProps} settings={settings({ videoSource: "camera" })} />);
+    render(
+      <VideoSourcePanel
+        {...defaultProps}
+        settings={settings({ videoSource: "camera" })}
+      />,
+    );
     const select = screen.getByDisplayValue("Front");
     fireEvent.change(select, { target: { value: "back" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ cameraFacing: "back" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      cameraFacing: "back",
+    });
   });
 
   it("changes camera size", () => {
-    render(<VideoSourcePanel {...defaultProps} settings={settings({ videoSource: "camera" })} />);
+    render(
+      <VideoSourcePanel
+        {...defaultProps}
+        settings={settings({ videoSource: "camera" })}
+      />,
+    );
     const input = screen.getByPlaceholderText("1920x1080");
     fireEvent.change(input, { target: { value: "1280x720" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ cameraSize: "1280x720" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      cameraSize: "1280x720",
+    });
   });
 
   it("changes camera ID", () => {
-    render(<VideoSourcePanel {...defaultProps} settings={settings({ videoSource: "camera" })} />);
+    render(
+      <VideoSourcePanel
+        {...defaultProps}
+        settings={settings({ videoSource: "camera" })}
+      />,
+    );
     const input = screen.getByPlaceholderText("Auto (leave empty)");
     fireEvent.change(input, { target: { value: "2" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ cameraId: "2" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      cameraId: "2",
+    });
   });
 });

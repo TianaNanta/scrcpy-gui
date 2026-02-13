@@ -39,23 +39,40 @@ describe("useScrcpyProcess", () => {
       const { DEFAULT_DEVICE_SETTINGS } = await import("../types/settings");
 
       await act(async () => {
-        await result.current.startScrcpy("DEVICE1", DEFAULT_DEVICE_SETTINGS, addLog);
+        await result.current.startScrcpy(
+          "DEVICE1",
+          DEFAULT_DEVICE_SETTINGS,
+          addLog,
+        );
       });
 
       // Should call test_device first, then start_scrcpy
-      expect(mockInvoke).toHaveBeenCalledWith("test_device", { serial: "DEVICE1" });
-      expect(mockInvoke).toHaveBeenCalledWith("start_scrcpy", expect.objectContaining({
+      expect(mockInvoke).toHaveBeenCalledWith("test_device", {
         serial: "DEVICE1",
-        args: expect.any(Array),
-      }));
+      });
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "start_scrcpy",
+        expect.objectContaining({
+          serial: "DEVICE1",
+          args: expect.any(Array),
+        }),
+      );
 
       expect(result.current.activeDevices).toContain("DEVICE1");
       expect(result.current.loading).toBe(false);
 
       // Should log test + start messages
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Testing device"));
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Device test passed"), "SUCCESS");
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Scrcpy started"), "SUCCESS");
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Testing device"),
+      );
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Device test passed"),
+        "SUCCESS",
+      );
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Scrcpy started"),
+        "SUCCESS",
+      );
     });
 
     it("stops on device test failure and does not start scrcpy", async () => {
@@ -66,12 +83,19 @@ describe("useScrcpyProcess", () => {
       const { DEFAULT_DEVICE_SETTINGS } = await import("../types/settings");
 
       await act(async () => {
-        await result.current.startScrcpy("BAD_DEV", DEFAULT_DEVICE_SETTINGS, addLog);
+        await result.current.startScrcpy(
+          "BAD_DEV",
+          DEFAULT_DEVICE_SETTINGS,
+          addLog,
+        );
       });
 
       expect(mockInvoke).toHaveBeenCalledTimes(1); // Only test_device
       expect(result.current.activeDevices).toEqual([]);
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Device test failed"), "ERROR");
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Device test failed"),
+        "ERROR",
+      );
       expect(result.current.loading).toBe(false);
     });
 
@@ -85,11 +109,18 @@ describe("useScrcpyProcess", () => {
       const { DEFAULT_DEVICE_SETTINGS } = await import("../types/settings");
 
       await act(async () => {
-        await result.current.startScrcpy("DEV1", DEFAULT_DEVICE_SETTINGS, addLog);
+        await result.current.startScrcpy(
+          "DEV1",
+          DEFAULT_DEVICE_SETTINGS,
+          addLog,
+        );
       });
 
       expect(result.current.activeDevices).toEqual([]);
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Failed to start scrcpy"), "ERROR");
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to start scrcpy"),
+        "ERROR",
+      );
       expect(result.current.loading).toBe(false);
     });
 
@@ -127,7 +158,11 @@ describe("useScrcpyProcess", () => {
 
       // Start first
       await act(async () => {
-        await result.current.startScrcpy("DEV1", DEFAULT_DEVICE_SETTINGS, addLog);
+        await result.current.startScrcpy(
+          "DEV1",
+          DEFAULT_DEVICE_SETTINGS,
+          addLog,
+        );
       });
       expect(result.current.activeDevices).toContain("DEV1");
 
@@ -136,7 +171,10 @@ describe("useScrcpyProcess", () => {
         await result.current.stopScrcpy("DEV1", addLog);
       });
       expect(result.current.activeDevices).not.toContain("DEV1");
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Scrcpy stopped"), "SUCCESS");
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Scrcpy stopped"),
+        "SUCCESS",
+      );
     });
 
     it("logs error when stop fails", async () => {
@@ -149,7 +187,10 @@ describe("useScrcpyProcess", () => {
         await result.current.stopScrcpy("DEV1", addLog);
       });
 
-      expect(addLog).toHaveBeenCalledWith(expect.stringContaining("Failed to stop scrcpy"), "ERROR");
+      expect(addLog).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to stop scrcpy"),
+        "ERROR",
+      );
     });
   });
 });
@@ -167,7 +208,9 @@ describe("setupScrcpyLogListener", () => {
   });
 
   it("formats log entries with serial prefix and detects error level", async () => {
-    let eventHandler: (event: { payload: { serial: string; line: string } }) => void = () => {};
+    let eventHandler: (event: {
+      payload: { serial: string; line: string };
+    }) => void = () => {};
     mockListen.mockImplementation(async (_event: unknown, handler: unknown) => {
       eventHandler = handler as typeof eventHandler;
       return () => {};
@@ -186,7 +229,9 @@ describe("setupScrcpyLogListener", () => {
     );
 
     // Simulate an error log
-    eventHandler({ payload: { serial: "DEV1", line: "ERROR: connection failed" } });
+    eventHandler({
+      payload: { serial: "DEV1", line: "ERROR: connection failed" },
+    });
     expect(addLog).toHaveBeenCalledWith(
       expect.objectContaining({
         level: "ERROR",

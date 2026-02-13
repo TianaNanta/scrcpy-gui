@@ -5,7 +5,9 @@ import { DEFAULT_DEVICE_SETTINGS } from "../../types/settings";
 import type { DeviceSettings } from "../../types/settings";
 
 vi.mock("@heroicons/react/24/outline", () => ({
-  ChevronDownIcon: (props: Record<string, unknown>) => <span data-testid="chevron" {...props} />,
+  ChevronDownIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron" {...props} />
+  ),
 }));
 
 const mockInvoke = vi.fn();
@@ -43,7 +45,9 @@ describe("V4L2Panel", () => {
   });
 
   it("hides content when collapsed", () => {
-    const { container } = render(<V4L2Panel {...defaultProps} expanded={false} />);
+    const { container } = render(
+      <V4L2Panel {...defaultProps} expanded={false} />,
+    );
     const panelContent = container.querySelector(".panel-content");
     expect(panelContent).not.toHaveClass("expanded");
     expect(panelContent).toHaveAttribute("aria-hidden", "true");
@@ -88,32 +92,58 @@ describe("V4L2Panel", () => {
 
     const select = screen.getByDisplayValue("Disabled");
     fireEvent.change(select, { target: { value: "/dev/video0" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ v4l2Sink: "/dev/video0" });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      v4l2Sink: "/dev/video0",
+    });
   });
 
   it("does not show buffer and noPlayback when sink is empty", () => {
-    render(<V4L2Panel {...defaultProps} settings={settings({ v4l2Sink: "" })} />);
+    render(
+      <V4L2Panel {...defaultProps} settings={settings({ v4l2Sink: "" })} />,
+    );
     expect(screen.queryByText("V4L2 Buffer (ms):")).not.toBeInTheDocument();
     expect(screen.queryByText("No Playback")).not.toBeInTheDocument();
   });
 
   it("shows buffer and noPlayback when sink is set", () => {
-    render(<V4L2Panel {...defaultProps} settings={settings({ v4l2Sink: "/dev/video0" })} />);
+    render(
+      <V4L2Panel
+        {...defaultProps}
+        settings={settings({ v4l2Sink: "/dev/video0" })}
+      />,
+    );
     expect(screen.getByText("V4L2 Buffer (ms):")).toBeInTheDocument();
     expect(screen.getByText("No Playback")).toBeInTheDocument();
   });
 
   it("changes v4l2 buffer", () => {
-    render(<V4L2Panel {...defaultProps} settings={settings({ v4l2Sink: "/dev/video0" })} />);
+    render(
+      <V4L2Panel
+        {...defaultProps}
+        settings={settings({ v4l2Sink: "/dev/video0" })}
+      />,
+    );
     const input = screen.getByPlaceholderText("0 (disabled)");
     fireEvent.change(input, { target: { value: "100" } });
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ v4l2Buffer: 100 });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      v4l2Buffer: 100,
+    });
   });
 
   it("toggles no playback", () => {
-    render(<V4L2Panel {...defaultProps} settings={settings({ v4l2Sink: "/dev/video0" })} />);
-    const checkbox = screen.getByText("No Playback").closest("label")!.querySelector("input")!;
+    render(
+      <V4L2Panel
+        {...defaultProps}
+        settings={settings({ v4l2Sink: "/dev/video0" })}
+      />,
+    );
+    const checkbox = screen
+      .getByText("No Playback")
+      .closest("label")!
+      .querySelector("input")!;
     fireEvent.click(checkbox);
-    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({ noPlayback: true });
+    expect(defaultProps.onSettingsChange).toHaveBeenCalledWith({
+      noPlayback: true,
+    });
   });
 });

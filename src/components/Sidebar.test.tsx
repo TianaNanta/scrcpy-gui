@@ -6,16 +6,30 @@ import type { Tab } from "../types/settings";
 
 // Mock heroicons — render simple spans
 vi.mock("@heroicons/react/24/outline", () => ({
-  DevicePhoneMobileIcon: (props: Record<string, unknown>) => <span data-testid="device-icon" {...props} />,
-  DocumentTextIcon: (props: Record<string, unknown>) => <span data-testid="doc-icon" {...props} />,
-  Bars3Icon: (props: Record<string, unknown>) => <span data-testid="bars-icon" {...props} />,
-  AdjustmentsHorizontalIcon: (props: Record<string, unknown>) => <span data-testid="adjust-icon" {...props} />,
-  ArrowPathIcon: (props: Record<string, unknown>) => <span data-testid="arrow-icon" {...props} />,
+  DevicePhoneMobileIcon: (props: Record<string, unknown>) => (
+    <span data-testid="device-icon" {...props} />
+  ),
+  DocumentTextIcon: (props: Record<string, unknown>) => (
+    <span data-testid="doc-icon" {...props} />
+  ),
+  Bars3Icon: (props: Record<string, unknown>) => (
+    <span data-testid="bars-icon" {...props} />
+  ),
+  AdjustmentsHorizontalIcon: (props: Record<string, unknown>) => (
+    <span data-testid="adjust-icon" {...props} />
+  ),
+  ArrowPathIcon: (props: Record<string, unknown>) => (
+    <span data-testid="arrow-icon" {...props} />
+  ),
 }));
 
 vi.mock("@heroicons/react/24/solid", () => ({
-  CheckCircleIcon: (props: Record<string, unknown>) => <span data-testid="check-circle-icon" {...props} />,
-  XCircleIcon: (props: Record<string, unknown>) => <span data-testid="x-circle-icon" {...props} />,
+  CheckCircleIcon: (props: Record<string, unknown>) => (
+    <span data-testid="check-circle-icon" {...props} />
+  ),
+  XCircleIcon: (props: Record<string, unknown>) => (
+    <span data-testid="x-circle-icon" {...props} />
+  ),
 }));
 
 describe("Sidebar", () => {

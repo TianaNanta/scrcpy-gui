@@ -1,0 +1,82 @@
+/* Loading Screen Styles */
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  z-index: 9999;
+  animation: fadeIn var(--duration-normal) var(--ease-default);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2xl);
+  background: var(--surface);
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+  min-width: 280px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(59, 130, 246, 0.1);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-message {
+  margin: 0;
+  font-size: var(--text-body);
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loading-screen {
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+  }
+
+  .loading-container {
+    background: rgba(31, 41, 55, 0.9);
+    color: #e5e7eb;
+  }
+
+  .loading-message {
+    color: #d1d5db;
+  }
+}
+
+/* Dark theme CSS variable override */
+:root[data-theme="dark"] .loading-screen {
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+}
+
+:root[data-theme="dark"] .loading-container {
+  background: rgba(31, 41, 55, 0.9);
+}
+
+:root[data-theme="dark"] .loading-message {
+  color: #d1d5db;
+}

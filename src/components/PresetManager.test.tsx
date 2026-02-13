@@ -6,11 +6,18 @@ import { DEFAULT_DEVICE_SETTINGS } from "../types/settings";
 
 // Mock heroicons
 vi.mock("@heroicons/react/24/outline", () => ({
-  DocumentTextIcon: (props: Record<string, unknown>) => <span data-testid="doc-icon" {...props} />,
+  DocumentTextIcon: (props: Record<string, unknown>) => (
+    <span data-testid="doc-icon" {...props} />
+  ),
 }));
 
 const makePreset = (overrides: Partial<Preset> = {}): Preset => {
-  const { recordingEnabled: _1, recordFile: _2, recordFormat: _3, ...rest } = DEFAULT_DEVICE_SETTINGS;
+  const {
+    recordingEnabled: _1,
+    recordFile: _2,
+    recordFormat: _3,
+    ...rest
+  } = DEFAULT_DEVICE_SETTINGS;
   return {
     ...rest,
     id: "preset-1",

@@ -15,7 +15,10 @@ export default function LogViewer({ logs }: LogViewerProps) {
       <section className="section">
         <div className="logs-container" role="log" aria-live="polite">
           {logs.map((log, index) => (
-            <div key={index} className={`log-entry log-${log.level.toLowerCase()}`}>
+            <div
+              key={index}
+              className={`log-entry log-${log.level.toLowerCase()}`}
+            >
               <span className="log-timestamp">
                 {new Date(log.timestamp).toLocaleTimeString()}
               </span>

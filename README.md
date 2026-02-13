@@ -4,7 +4,13 @@ A beautiful graphical user interface for [scrcpy](https://github.com/Genymobile/
 
 ## Features
 
-- List connected Android devices
+- **Device Health Monitoring**: Real-time battery, storage, and network latency status for connected devices
+  - Battery percentage, charge status, and temperature display
+  - Storage usage with warning indicators when free space is low (<500MB)
+  - Network quality assessment based on ADB latency (excellent/good/fair/poor)
+  - Automatic status polling with configurable intervals
+  - Smart error recovery with exponential backoff retry logic
+- List connected Android devices with status indicators
 - Start scrcpy mirroring with customizable options
 - Modern, beautiful UI with icons and responsive design
 - Dependency checks for ADB and scrcpy
@@ -38,6 +44,41 @@ A beautiful graphical user interface for [scrcpy](https://github.com/Genymobile/
    - **Settings**: Customize theme, color scheme, and font size
 5. Click "Start Scrcpy" to begin mirroring
 
-## Recommended IDE Setup
+## Device Health Monitoring
+
+The app continuously monitors connected device health and displays real-time status:
+
+### Status Indicators
+
+- **Battery Badge**: Shows current battery percentage with color coding
+  - 🟢 Green: Good battery level (≥20%)
+  - 🟡 Yellow: Low battery warning (<20%)
+  - 🔴 Red: Critical battery (<5%)
+- **Storage Badge**: Displays available storage
+  - 🟢 Green: Adequate space (>500MB free)
+  - 🟡 Yellow: Low storage warning (<500MB free)
+- **Network Quality**: Indicates ADB latency-based connection quality
+  - 🟢 Excellent: <100ms latency
+  - 🟡 Good: <500ms latency
+  - 🟠 Fair: <2s latency
+  - 🔴 Poor: ≥2s latency or disconnected
+
+### Polling Behavior
+
+- **Default Interval**: Health checks run every 2 seconds
+- **Retry Strategy**: Failed health queries use exponential backoff (max 3 attempts)
+- **Auto-Reconnection**: Device automatically reconnects if temporarily unavailable
+- **Error Recovery**: Detailed error messages guide troubleshooting for common issues
+
+### Troubleshooting
+
+If you see error messages in the device health display:
+
+1. **"Device offline"** - Reconnect device via USB or WiFi ADB
+2. **"ADB command failed"** - Verify ADB is properly installed and in PATH
+3. **"Permission denied"** - Ensure USB debugging is enabled on device
+4. **"Connection timeout"** - Check network connectivity or USB connection
+
+---## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)

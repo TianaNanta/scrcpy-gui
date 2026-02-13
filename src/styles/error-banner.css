@@ -1,0 +1,218 @@
+/* DeviceErrorBanner Styles */
+
+.error-banner {
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background-color: var(--error-bg, #fee);
+  border-left: 4px solid var(--error-border, #c33);
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+}
+
+/* Transient error (retrying) styling */
+.error-banner--transient {
+  background-color: var(--warning-bg, #ffeaa7);
+  border-left-color: var(--warning-border, #fdcb6e);
+}
+
+.error-banner--transient .icon-warning {
+  color: var(--warning-text, #d67c3c);
+}
+
+/* Permanent error styling */
+.error-banner--permanent {
+  background-color: var(--error-bg, #fee);
+  border-left-color: var(--error-border, #c33);
+}
+
+.error-banner--permanent .icon-error {
+  color: var(--error-text, #c33);
+}
+
+/* Header layout */
+.error-banner__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.error-banner__icon {
+  flex-shrink: 0;
+  padding-top: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.error-banner__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.error-banner__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.error-banner__retry-badge {
+  font-size: 11px;
+  font-weight: normal;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary, #666);
+}
+
+.error-banner__message {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+/* Actions */
+.error-banner__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.error-banner__expand-btn,
+.error-banner__close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #666);
+  transition: all 0.2s ease;
+}
+
+.error-banner__expand-btn:hover,
+.error-banner__close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary, #1a1a1a);
+}
+
+.expand-icon--closed {
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+.expand-icon--open {
+  transform: rotate(180deg);
+}
+
+/* Details/Suggestions */
+.error-banner__details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.error-banner__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestions__title {
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  font-size: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.suggestions__list {
+  margin: 0;
+  padding-left: 20px;
+  list-style: decimal;
+  color: var(--text-secondary, #666);
+}
+
+.suggestions__item {
+  margin: 4px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.suggestions__link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--link-color, #0066cc);
+  text-decoration: none;
+  font-size: 12px;
+  margin-top: 4px;
+  transition: color 0.2s ease;
+}
+
+.suggestions__link:hover {
+  color: var(--link-hover, #0052a3);
+  text-decoration: underline;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .error-banner {
+    background-color: var(--error-bg-dark, #5a3333);
+    border-left-color: var(--error-border-dark, #e88);
+  }
+
+  .error-banner--transient {
+    background-color: var(--warning-bg-dark, #5a4911);
+    border-left-color: var(--warning-border-dark, #ffb84d);
+  }
+
+  .error-banner--transient .icon-warning {
+    color: var(--warning-text-dark, #ffb84d);
+  }
+
+  .error-banner--permanent .icon-error {
+    color: var(--error-text-dark, #ff8888);
+  }
+
+  .error-banner__title {
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .error-banner__retry-badge {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary-dark, #a0a0a0);
+  }
+
+  .error-banner__message {
+    color: var(--text-secondary-dark, #a0a0a0);
+  }
+
+  .error-banner__expand-btn:hover,
+  .error-banner__close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .suggestions__title {
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .suggestions__item {
+    color: var(--text-secondary-dark, #a0a0a0);
+  }
+
+  .suggestions__link {
+    color: var(--link-color-dark, #66b3ff);
+  }
+
+  .suggestions__link:hover {
+    color: var(--link-hover-dark, #99ccff);
+  }
+}
