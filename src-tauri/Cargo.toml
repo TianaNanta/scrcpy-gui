@@ -1,8 +1,8 @@
 [package]
 name = "scrcpy-gui"
 version = "0.5.3"
-description = "A Tauri App"
-authors = ["you"]
+description = "A GUI to make easier for connecting phone using scrcpy "
+authors = ["TianaNanta"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

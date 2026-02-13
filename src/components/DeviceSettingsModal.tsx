@@ -20,7 +20,6 @@ interface DeviceSettingsModalProps {
   device: Device | undefined;
   serial: string;
   settings: DeviceSettings;
-  deviceName: string;
   canUhidInput?: boolean;
   canAudio?: boolean;
   canNoVideo?: boolean;
@@ -37,7 +36,6 @@ export default function DeviceSettingsModal({
   device,
   serial,
   settings,
-  deviceName,
   canUhidInput = false,
   canAudio = false,
   canNoVideo = false,
@@ -50,8 +48,25 @@ export default function DeviceSettingsModal({
   onSave,
 }: DeviceSettingsModalProps) {
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set());
+  const [editableName, setEditableName] = useState(settings.name || "");
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
+
+  // Initialize wireless connection info from serial when modal opens
+  // Sync with serial to ensure UI shows the actual current connection
+  // Only depends on serial/device changes, not settings, to allow user editing
+  useEffect(() => {
+    if (device?.is_wireless && serial.includes(":")) {
+      const parts = serial.split(":");
+      if (parts.length === 2) {
+        const ip = parts[0];
+        const port = parseInt(parts[1], 10);
+        if (!isNaN(port)) {
+          onSettingsChange({ ipAddress: ip, port });
+        }
+      }
+    }
+  }, [device?.is_wireless, serial, onSettingsChange]);
 
   const handleClose = useCallback(() => {
     onSave?.(settings);
@@ -108,7 +123,31 @@ export default function DeviceSettingsModal({
     [],
   );
 
-  const generatedCommand = formatCommandDisplay(buildArgs(serial, settings));
+  // Calculate the effective serial that will be used (accounting for IP/Port changes)
+  const effectiveSerial = (() => {
+    if (!device?.is_wireless || !settings.ipAddress || !settings.port) {
+      return serial;
+    }
+    
+    const currentParts = serial.split(":");
+    if (currentParts.length !== 2) {
+      return serial;
+    }
+    
+    const currentIp = currentParts[0];
+    const currentPort = parseInt(currentParts[1], 10);
+    const newIp = settings.ipAddress.trim();
+    const newPort = settings.port;
+    
+    // If IP/Port have changed, return the new serial
+    if (newIp && (newIp !== currentIp || newPort !== currentPort)) {
+      return `${newIp}:${newPort}`;
+    }
+    
+    return serial;
+  })();
+
+  const generatedCommand = formatCommandDisplay(buildArgs(effectiveSerial, settings));
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -123,13 +162,60 @@ export default function DeviceSettingsModal({
       >
         <div className="modal-header">
           <div>
-            <h3 id="device-settings-title">
-              {deviceName || device?.model || serial}
-            </h3>
-            <p className="modal-device-meta">
-              {device?.is_wireless ? serial : "USB"} • Android{" "}
-              {device?.android_version || "Unknown"}
-            </p>
+            <div className="device-name-section">
+              <input
+                type="text"
+                id="device-settings-title"
+                placeholder="Device name"
+                value={editableName}
+                onChange={(e) => {
+                  setEditableName(e.target.value);
+                  onSettingsChange({ name: e.target.value });
+                }}
+                className="device-name-input"
+                aria-label="Device name"
+              />
+            </div>
+            {device?.is_wireless ? (
+              <div className="modal-device-meta">
+                <div className="wireless-connection-inline">
+                  <label>
+                    <span>IP:</span>
+                    <input
+                      type="text"
+                      placeholder="192.168.1.100"
+                      value={settings.ipAddress || ""}
+                      onChange={(e) => onSettingsChange({ ipAddress: e.target.value })}
+                      className="wireless-inline-input"
+                      aria-label="Device IP address"
+                    />
+                  </label>
+                  <label>
+                    <span>Port:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="65535"
+                      value={settings.port || 5555}
+                      onChange={(e) => {
+                        const newPort = parseInt(e.target.value, 10);
+                        if (!isNaN(newPort)) {
+                          onSettingsChange({ port: newPort });
+                        }
+                      }}
+                      className="wireless-inline-input port-input"
+                      aria-label="Connection port"
+                    />
+                  </label>
+                  <span className="separator">•</span>
+                  <span className="android-version">Android {device?.android_version || "Unknown"}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="modal-device-meta">
+                USB • Android {device?.android_version || "Unknown"}
+              </p>
+            )}
           </div>
           <div className="modal-header-actions">
             <button

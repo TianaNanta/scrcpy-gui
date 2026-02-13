@@ -7,8 +7,8 @@ import {
 } from "./settings";
 
 describe("DEFAULT_DEVICE_SETTINGS", () => {
-  it("has the expected number of fields (53)", () => {
-    expect(Object.keys(DEFAULT_DEVICE_SETTINGS).length).toBe(53);
+  it("has the expected number of fields (55)", () => {
+    expect(Object.keys(DEFAULT_DEVICE_SETTINGS).length).toBe(55);
   });
 
   it("has sensible video defaults", () => {

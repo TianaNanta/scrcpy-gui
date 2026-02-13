@@ -11,6 +11,8 @@ pub fn run() {
             commands::system::get_platform,
             commands::system::list_v4l2_devices,
             commands::device::list_devices,
+            commands::device::list_adb_devices,
+            commands::device::register_device,
             commands::device::test_device,
             commands::device::forget_device,
             commands::scrcpy::start_scrcpy,
