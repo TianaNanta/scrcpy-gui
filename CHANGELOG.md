@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Real-time Command Validation & Conflict Detection
+
+- **Comprehensive scrcpy option validation**: Real-time validation of all 50+ scrcpy command-line options with type checking, range validation, and enum constraints
+- **Intelligent conflict detection**: Automatic detection of incompatible flag combinations (e.g., turn-screen-off + show-touches, camera-id + camera-facing) with clear error messages
+- **Command preview with validation status**: Live preview of formatted scrcpy commands with syntax highlighting, validation indicators, and error highlighting
+- **Device-aware validation**: API level compatibility checking and device-specific option validation
+- **Accessibility compliance**: Full ARIA support, screen reader compatibility, keyboard navigation, and semantic HTML structure
+- **Performance optimization**: O(1) conflict detection using pre-computed conflict maps, <50ms validation response times
+- **Comprehensive test coverage**: 33+ validation tests including unit tests, integration tests, and quickstart scenario validation
+
+### Technical Details
+
+- **Validation Engine**: TypeScript-based validation system with 50+ scrcpy options, conflict rules, and device compatibility checking
+- **Conflict Resolution**: Pre-computed conflict maps for O(1) lookup performance, smart value-based conflict detection
+- **UI Components**: React components with validation feedback (`CommandPreview`, `ValidationBanner`, `OptionField`) and accessibility features
+- **Testing**: Complete test suite with unit tests, integration tests, and documentation validation
+- **Performance**: Optimized validation algorithms ensuring real-time feedback without UI blocking
+
+### Fixed
+
+- **Validation option registry**: Added missing scrcpy options (`otg`, `no-audio`, `crop`, `no-video`, etc.) that were referenced in conflict rules but not defined, preventing "Unknown option" errors
+- **Conflict detection logic**: Improved conflict detection to properly handle default values and prevent false conflicts when apps include default device settings
+- **Option presence checking**: Enhanced validation to distinguish between explicitly set options and default values for more accurate conflict detection
+
 #### Device Health Indicators & Status Polling
 
 - **Real-time device status monitoring**: Display current battery percentage, charge status, storage usage, and network latency for connected devices

@@ -1,11 +1,14 @@
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import type { DeviceSettings } from "../../types/settings";
+import { OptionField } from "../OptionField";
+import type { ValidationState } from "../../types/validation";
 
 interface DisplayPanelProps {
   settings: DeviceSettings;
   onSettingsChange: (updates: Partial<DeviceSettings>) => void;
   expanded: boolean;
   onToggle: () => void;
+  validationState?: ValidationState;
 }
 
 export default function DisplayPanel({
@@ -13,6 +16,7 @@ export default function DisplayPanel({
   onSettingsChange,
   expanded,
   onToggle,
+  validationState,
 }: DisplayPanelProps) {
   const isCameraSource = settings.videoSource === "camera";
   const isVirtualDisplay = settings.virtualDisplay;
@@ -58,16 +62,14 @@ export default function DisplayPanel({
           </label>
         </div>
         <div className="row">
-          <label className="input-label">
-            Bitrate (bps):
-            <input
-              type="number"
-              value={settings.bitrate}
-              onChange={(e) =>
-                onSettingsChange({ bitrate: Number(e.target.value) })
-              }
-            />
-          </label>
+          <OptionField
+            type="number"
+            label="Bitrate (bps)"
+            value={settings.bitrate}
+            onChange={(value) => onSettingsChange({ bitrate: Number(value) })}
+            error={validationState?.errors.find(e => e.option === 'video-bit-rate')}
+            warning={validationState?.warnings.find(w => w.option === 'video-bit-rate')}
+          />
         </div>
         <div className="row">
           <label className="input-label">

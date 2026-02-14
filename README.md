@@ -79,6 +79,51 @@ If you see error messages in the device health display:
 3. **"Permission denied"** - Ensure USB debugging is enabled on device
 4. **"Connection timeout"** - Check network connectivity or USB connection
 
----## Recommended IDE Setup
+## Real-time Command Validation
+
+The app provides comprehensive validation for scrcpy command configurations to prevent errors and ensure successful mirroring sessions.
+
+### Validation Features
+
+- **Real-time Feedback**: Options are validated as you type or select them
+- **Error Prevention**: Invalid configurations are blocked before execution
+- **Conflict Detection**: Incompatible option combinations are detected and warned about
+- **Visual Indicators**: Command preview shows validation status with color-coded indicators
+
+### Validation Status
+
+The command preview displays validation status:
+
+- **🟢 Valid Command**: All options are valid and compatible
+- **🔴 Command Has Errors**: Blocking validation errors prevent execution
+- **🟡 Command Has Warnings**: Potential issues that may cause problems
+
+### Common Validation Rules
+
+- **Numeric Ranges**: Bitrate, size, and FPS values must be within valid ranges
+- **Enum Values**: Video codec, audio codec, and other options must use supported values
+- **API Level Compatibility**: Some options require minimum Android API levels
+- **Conflict Detection**: Options like `--turn-screen-off` and `--show-touches` cannot be used together
+- **Dependency Requirements**: Camera options require video source to be set to "camera"
+
+### Validation Examples
+
+**Valid Configuration:**
+```
+scrcpy --max-size=1920 --video-bit-rate=8000000 --fullscreen
+```
+*Status: 🟢 Valid Command*
+
+**Invalid Configuration:**
+```
+scrcpy --max-size=-1 --turn-screen-off --show-touches
+```
+*Status: 🔴 Command Has Errors*
+- `--max-size=-1`: Value must be positive
+- `--turn-screen-off` + `--show-touches`: Conflicting options
+
+---
+
+## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
