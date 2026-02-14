@@ -15,6 +15,8 @@ import VideoSourcePanel from "./settings-panels/VideoSourcePanel";
 import V4L2Panel from "./settings-panels/V4L2Panel";
 import VirtualDisplayPanel from "./settings-panels/VirtualDisplayPanel";
 import { isLinux } from "../utils/platform";
+import { useCommandValidation } from "../hooks/useCommandValidation";
+import { ValidationBanner } from "./ValidationBanner";
 
 interface DeviceSettingsModalProps {
   device: Device | undefined;
@@ -51,6 +53,25 @@ export default function DeviceSettingsModal({
   const [editableName, setEditableName] = useState(settings.name || "");
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
+
+  // Validation hook for real-time command validation
+  const validationConfig = {
+    options: {
+      'video-bit-rate': settings.bitrate,
+      'turn-screen-off': settings.turnScreenOff,
+      'show-touches': settings.showTouches,
+      'no-control': settings.noControl,
+      'camera-id': settings.cameraId,
+      'camera-facing': settings.cameraFacing,
+      'otg': settings.otgMode,
+      'tcpip': settings.ipAddress ? `${settings.ipAddress}:${settings.port}` : undefined,
+      'no-audio': settings.noAudio
+    }
+  };
+  const { validation } = useCommandValidation(validationConfig);
+
+  // Check if there are blocking validation errors
+  const hasBlockingErrors = validation.errors.length > 0;
 
   // Initialize wireless connection info from serial when modal opens
   // Sync with serial to ensure UI shows the actual current connection
@@ -227,7 +248,12 @@ export default function DeviceSettingsModal({
             >
               Copy Command
             </button>
-            <button className="btn btn-primary" onClick={onLaunch}>
+            <button 
+              className="btn btn-primary" 
+              onClick={onLaunch}
+              disabled={hasBlockingErrors}
+              title={hasBlockingErrors ? "Cannot launch due to validation errors" : undefined}
+            >
               Launch Mirroring
             </button>
             <button
@@ -240,6 +266,13 @@ export default function DeviceSettingsModal({
           </div>
         </div>
         <div className="modal-body">
+          <ValidationBanner
+            conflicts={[...validation.errors, ...validation.warnings]}
+            onDismiss={() => {
+              // For now, just log that conflicts were dismissed
+              console.log('Validation conflicts dismissed');
+            }}
+          />
           <VideoSourcePanel
             settings={settings}
             onSettingsChange={onSettingsChange}
@@ -252,6 +285,7 @@ export default function DeviceSettingsModal({
             onSettingsChange={onSettingsChange}
             expanded={expandedPanels.has("display")}
             onToggle={() => togglePanel("display")}
+            validationState={validation}
           />
           <WindowPanel
             settings={settings}
@@ -314,7 +348,7 @@ export default function DeviceSettingsModal({
             expanded={expandedPanels.has("network")}
             onToggle={() => togglePanel("network")}
           />
-          <CommandPreview command={generatedCommand} />
+          <CommandPreview command={generatedCommand} validationState={validation} />
         </div>
       </div>
     </div>
