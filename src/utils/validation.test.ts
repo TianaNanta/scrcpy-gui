@@ -141,13 +141,7 @@ describe('formatCommand', () => {
         'invalid-option': 'bad-value'
       }
     };
-    const validationState = {
-      isValid: false,
-      errors: [{ option: 'invalid-option', message: 'Invalid option', code: 'UNKNOWN_OPTION' }],
-      warnings: [],
-      optionStates: {}
-    };
-    const command = formatCommand(config, validationState);
+    const command = formatCommand(config);
     expect(command).toContain('scrcpy');
     expect(command).toContain('--max-size=1920');
     // Should still include the invalid option in the command, but validation status would be shown in UI
@@ -160,13 +154,7 @@ describe('formatCommand', () => {
         'show-touches': true
       }
     };
-    const validationState = {
-      isValid: false,
-      errors: [],
-      warnings: [{ option: 'turn-screen-off', message: 'Conflicts with show-touches', code: 'OPTION_CONFLICT' }],
-      optionStates: {}
-    };
-    const command = formatCommand(config, validationState);
+    const command = formatCommand(config);
     expect(command).toContain('scrcpy');
     expect(command).toContain('--turn-screen-off');
     // Note: show-touches is not in the options registry yet, so it won't appear

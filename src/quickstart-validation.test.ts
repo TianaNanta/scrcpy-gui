@@ -7,38 +7,32 @@ import { createTestValidationConfig } from './test-setup';
 describe('Quickstart Validation Scenarios', () => {
   describe('Basic Usage Examples', () => {
     it('should validate the documented valid configuration', () => {
-      const config = createTestValidationConfig({
+      const validation = validateCommandConfiguration(createTestValidationConfig({
         'video-bit-rate': 8000000, // 8M
         'max-fps': 30,
         // Audio source defaults to output
-      });
-
-      const validation = validateCommandConfiguration(config);
+      }));
       expect(validation.isValid).toBe(true);
       expect(validation.errors.length).toBe(0);
       expect(validation.warnings.length).toBe(0);
     });
 
     it('should detect the documented invalid configuration', () => {
-      const config = createTestValidationConfig({
+      const validation = validateCommandConfiguration(createTestValidationConfig({
         'video-bit-rate': -1, // Invalid negative value
         'max-fps': 30,
         // Audio source defaults to output
-      });
-
-      const validation = validateCommandConfiguration(config);
+      }));
       expect(validation.isValid).toBe(false);
       expect(validation.errors.length).toBeGreaterThan(0);
       expect(validation.errors[0].code).toBe('VALUE_TOO_LOW');
     });
 
     it('should detect the documented conflicting configuration', () => {
-      const config = createTestValidationConfig({
+      const validation = validateCommandConfiguration(createTestValidationConfig({
         'turn-screen-off': true,
         'show-touches': true,
-      });
-
-      const validation = validateCommandConfiguration(config);
+      }));
       expect(validation.isValid).toBe(true); // Valid but with warnings
       expect(validation.warnings.length).toBeGreaterThan(0);
       expect(validation.warnings[0].code).toBe('OPTION_CONFLICT');
@@ -64,8 +58,7 @@ describe('Quickstart Validation Scenarios', () => {
         'max-fps': 30,
       });
 
-      const validation = validateCommandConfiguration(config);
-      const command = formatCommand(config, validation);
+      const command = formatCommand(config);
 
       // Command should still be formatted even with errors
       expect(command).toContain('scrcpy');

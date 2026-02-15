@@ -604,7 +604,7 @@ export function checkConflicts(config: CommandConfiguration): ValidationWarning[
 /**
  * Generates the scrcpy command string from configuration
  */
-export function formatCommand(config: CommandConfiguration, validationState?: ValidationState): string {
+export function formatCommand(config: CommandConfiguration): string {
   const parts = ['scrcpy'];
 
   for (const [optionName, value] of Object.entries(config.options)) {

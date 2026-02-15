@@ -1,6 +1,6 @@
 // Integration tests for validation system across user stories
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { validateCommandConfiguration, formatCommand } from './utils/validation';
 import CommandPreview from './components/CommandPreview';
@@ -24,7 +24,7 @@ describe('Validation System Integration', () => {
       expect(validation.warnings.length).toBeGreaterThan(0);
 
       // Command should still be formatted (US3)
-      const command = formatCommand(config, validation);
+      const command = formatCommand(config);
       expect(command).toContain('scrcpy');
       expect(command).toContain('--turn-screen-off');
       expect(command).toContain('--show-touches');

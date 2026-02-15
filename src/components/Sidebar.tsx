@@ -13,7 +13,7 @@ export type Tab = "devices" | "presets" | "logs" | "settings";
 const tabs: {
   id: Tab;
   name: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: React.ElementType;
 }[] = [
   { id: "devices", name: "Devices", icon: DevicePhoneMobileIcon },
   { id: "presets", name: "Presets", icon: DocumentTextIcon },
