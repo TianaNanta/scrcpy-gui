@@ -6,6 +6,11 @@ import {
   saveDeviceNames,
   loadPresets,
   createPreset,
+  updatePresetTags,
+  togglePresetFavorite,
+  getPresetsByTag,
+  getFavoritePresets,
+  getAllTags,
 } from "./useDeviceSettings";
 import { DEFAULT_DEVICE_SETTINGS } from "../types/settings";
 import type { DeviceSettings } from "../types/settings";
@@ -167,5 +172,63 @@ describe("saveDeviceSettings persists to localStorage", () => {
 
     expect(result.get("dev-1")?.name).toBe("Existing");
     expect(result.get("dev-2")?.name).toBe("New");
+  });
+});
+
+describe("Preset tag and favorite utilities", () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+  });
+
+  it("updatePresetTags updates tags for specific preset", () => {
+    const preset1 = createPreset("Preset 1", DEFAULT_DEVICE_SETTINGS);
+    const preset2 = createPreset("Preset 2", DEFAULT_DEVICE_SETTINGS);
+    localStorageMock.setItem("scrcpy-presets", JSON.stringify([preset1, preset2]));
+
+    const updated = updatePresetTags(preset1.id, ["gaming", "high-quality"]);
+
+    expect(updated).toHaveLength(2);
+    const updatedPreset1 = updated.find(p => p.id === preset1.id);
+    expect(updatedPreset1?.tags).toEqual(["gaming", "high-quality"]);
+    expect(updatedPreset1?.updatedAt).toBeInstanceOf(Date);
+  });
+
+  it("togglePresetFavorite toggles favorite status", () => {
+    const preset = createPreset("Test", DEFAULT_DEVICE_SETTINGS);
+    localStorageMock.setItem("scrcpy-presets", JSON.stringify([preset]));
+
+    const updated = togglePresetFavorite(preset.id);
+
+    expect(updated[0].isFavorite).toBe(true);
+    expect(updated[0].updatedAt).toBeInstanceOf(Date);
+  });
+
+  it("getPresetsByTag filters presets by tag", () => {
+    const preset1 = { ...createPreset("Preset 1", DEFAULT_DEVICE_SETTINGS), tags: ["gaming"] };
+    const preset2 = { ...createPreset("Preset 2", DEFAULT_DEVICE_SETTINGS), tags: ["work"] };
+    localStorageMock.setItem("scrcpy-presets", JSON.stringify([preset1, preset2]));
+
+    const gamingPresets = getPresetsByTag("gaming");
+    expect(gamingPresets).toHaveLength(1);
+    expect(gamingPresets[0].name).toBe("Preset 1");
+  });
+
+  it("getFavoritePresets returns only favorites", () => {
+    const preset1 = { ...createPreset("Preset 1", DEFAULT_DEVICE_SETTINGS), isFavorite: true };
+    const preset2 = { ...createPreset("Preset 2", DEFAULT_DEVICE_SETTINGS), isFavorite: false };
+    localStorageMock.setItem("scrcpy-presets", JSON.stringify([preset1, preset2]));
+
+    const favorites = getFavoritePresets();
+    expect(favorites).toHaveLength(1);
+    expect(favorites[0].name).toBe("Preset 1");
+  });
+
+  it("getAllTags returns unique sorted tags", () => {
+    const preset1 = { ...createPreset("Preset 1", DEFAULT_DEVICE_SETTINGS), tags: ["gaming", "high-quality"] };
+    const preset2 = { ...createPreset("Preset 2", DEFAULT_DEVICE_SETTINGS), tags: ["gaming", "work"] };
+    localStorageMock.setItem("scrcpy-presets", JSON.stringify([preset1, preset2]));
+
+    const tags = getAllTags();
+    expect(tags).toEqual(["gaming", "high-quality", "work"]);
   });
 });

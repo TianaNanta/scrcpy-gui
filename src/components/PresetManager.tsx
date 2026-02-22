@@ -1,11 +1,17 @@
-import { DocumentTextIcon } from "@heroicons/react/24/outline";
+import React from "react";
+import { DocumentTextIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import type { Preset } from "../types/settings";
+import TagInput from "./TagInput";
+import PresetCard from "./PresetCard";
 
 interface PresetManagerProps {
   presets: Preset[];
-  onSavePreset: (name: string) => void;
+  onSavePreset: (name: string, tags: string[]) => void;
   onLoadPreset: (preset: Preset) => void;
   onDeletePreset?: (presetId: string) => void;
+  onToggleFavorite?: (presetId: string) => void;
+  onExport?: () => void;
+  onImport?: () => void;
 }
 
 export default function PresetManager({
@@ -13,7 +19,41 @@ export default function PresetManager({
   onSavePreset,
   onLoadPreset,
   onDeletePreset,
+  onToggleFavorite,
+  onExport,
+  onImport,
 }: PresetManagerProps) {
+  const [presetName, setPresetName] = React.useState("");
+  const [presetTags, setPresetTags] = React.useState<string[]>([]);
+  const [filterTags, setFilterTags] = React.useState<string[]>([]);
+  const [showOnlyFavorites, setShowOnlyFavorites] = React.useState(false);
+
+  const handleSavePreset = () => {
+    if (presetName.trim()) {
+      onSavePreset(presetName.trim(), presetTags);
+      setPresetName("");
+      setPresetTags([]);
+    }
+  };
+
+  const filteredPresets = React.useMemo(() => {
+    let filtered = filterTags.length === 0
+      ? presets
+      : presets.filter(preset =>
+          filterTags.every(tag => preset.tags.includes(tag))
+        );
+
+    if (showOnlyFavorites) {
+      filtered = filtered.filter(preset => preset.isFavorite);
+    }
+
+    // Sort favorites first
+    return filtered.sort((a, b) => {
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      return 0; // Maintain original order for same favorite status
+    });
+  }, [presets, filterTags, showOnlyFavorites]);
   return (
     <div className="tab-content">
       <header className="header">
@@ -22,28 +62,29 @@ export default function PresetManager({
       </header>
       <section className="section">
         <h2>Save Current Configuration</h2>
-        <div className="row">
+        <div className="row" style={{ flexDirection: "column", alignItems: "stretch" }}>
           <input
             type="text"
             placeholder="Preset name"
             className="input"
             aria-label="Preset name"
+            value={presetName}
+            onChange={(e) => setPresetName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                const input = e.target as HTMLInputElement;
-                if (input.value.trim()) {
-                  onSavePreset(input.value.trim());
-                  input.value = "";
-                }
+                handleSavePreset();
               }
             }}
           />
+          <TagInput
+            tags={presetTags}
+            onChange={setPresetTags}
+            placeholder="Add tags (optional)..."
+          />
           <button
             className="btn btn-primary"
-            onClick={() => {
-              const name = prompt("Enter preset name");
-              if (name?.trim()) onSavePreset(name.trim());
-            }}
+            onClick={handleSavePreset}
+            disabled={!presetName.trim()}
           >
             Save Preset
           </button>
@@ -51,36 +92,68 @@ export default function PresetManager({
       </section>
       <section className="section">
         <h2>Available Presets</h2>
+        <div style={{ marginBottom: "var(--space-md)", display: "flex", gap: "var(--space-sm)" }}>
+          {onExport && (
+            <button
+              className="btn btn-secondary"
+              onClick={onExport}
+              disabled={presets.length === 0}
+              title="Export presets to file"
+            >
+              <ArrowDownTrayIcon style={{ width: "1rem", height: "1rem", marginRight: "var(--space-xs)" }} />
+              Export
+            </button>
+          )}
+          {onImport && (
+            <button
+              className="btn btn-secondary"
+              onClick={onImport}
+              title="Import presets from file"
+            >
+              <ArrowUpTrayIcon style={{ width: "1rem", height: "1rem", marginRight: "var(--space-xs)" }} />
+              Import
+            </button>
+          )}
+        </div>
+        <div style={{ marginBottom: "var(--space-md)" }}>
+          <label style={{ display: "block", marginBottom: "var(--space-xs)" }}>
+            Filter by tags:
+          </label>
+          <TagInput
+            tags={filterTags}
+            onChange={setFilterTags}
+            placeholder="Filter tags..."
+          />
+          <div style={{ marginTop: "var(--space-sm)" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
+              <input
+                type="checkbox"
+                checked={showOnlyFavorites}
+                onChange={(e) => setShowOnlyFavorites(e.target.checked)}
+              />
+              Show only favorites
+            </label>
+          </div>
+        </div>
         <div className="presets-list">
-          {presets.map((preset) => (
-            <div key={preset.id} className="preset-item">
-              <span>{preset.name}</span>
-              <div className="preset-actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => onLoadPreset(preset)}
-                  aria-label={`Load preset ${preset.name}`}
-                >
-                  Load
-                </button>
-                {onDeletePreset && (
-                  <button
-                    className="btn btn-secondary btn-delete-text"
-                    onClick={() => onDeletePreset(preset.id)}
-                    aria-label={`Delete preset ${preset.name}`}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </div>
+          {filteredPresets.map((preset) => (
+            <PresetCard
+              key={preset.id}
+              preset={preset}
+              onLoad={() => onLoadPreset(preset)}
+              onDelete={onDeletePreset ? () => onDeletePreset(preset.id) : undefined}
+              onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(preset.id) : undefined}
+            />
           ))}
-          {presets.length === 0 && (
+          {filteredPresets.length === 0 && (
             <p
               className="text-caption"
               style={{ textAlign: "center", padding: "var(--space-lg)" }}
             >
-              No presets saved yet. Configure your settings and save a preset.
+              {filterTags.length > 0
+                ? "No presets match the selected tags."
+                : "No presets saved yet. Configure your settings and save a preset."
+              }
             </p>
           )}
         </div>

@@ -32,6 +32,8 @@ pub fn run() {
             commands::connection::connect_wireless_device,
             commands::connection::disconnect_wireless_device,
             commands::file::select_save_file,
+            commands::file::export_presets,
+            commands::file::import_presets,
             commands::health::start_health_polling,
             commands::health::stop_health_polling,
             commands::health::get_device_health,
