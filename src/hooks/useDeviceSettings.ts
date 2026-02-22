@@ -150,7 +150,15 @@ export function loadPresets(): Preset[] {
     try {
       const raw: Array<Partial<Preset> & { id: string; name: string }> =
         JSON.parse(saved);
-      return raw.map(migratePreset);
+      return raw.map((preset) => {
+        // Parse date strings back to Date objects
+        const migrated = migratePreset(preset);
+        return {
+          ...migrated,
+          createdAt: typeof migrated.createdAt === 'string' ? new Date(migrated.createdAt) : migrated.createdAt,
+          updatedAt: typeof migrated.updatedAt === 'string' ? new Date(migrated.updatedAt) : migrated.updatedAt,
+        };
+      });
     } catch {
       return [];
     }
@@ -160,6 +168,29 @@ export function loadPresets(): Preset[] {
 
 /** Save presets to localStorage */
 export function savePresetsToStorage(presets: Preset[]): void {
+  // Validate presets before saving
+  const names = new Set<string>();
+  for (const preset of presets) {
+    if (!preset.name || preset.name.trim().length === 0) {
+      console.error(`Invalid preset: missing or empty name for id ${preset.id}`);
+      return; // Don't save invalid data
+    }
+    if (names.has(preset.name.trim())) {
+      console.error(`Invalid presets: duplicate name "${preset.name}"`);
+      return;
+    }
+    names.add(preset.name.trim());
+    
+    if (!Array.isArray(preset.tags)) {
+      console.error(`Invalid preset: tags not array for id ${preset.id}`);
+      return;
+    }
+    if (typeof preset.isFavorite !== 'boolean') {
+      console.error(`Invalid preset: isFavorite not boolean for id ${preset.id}`);
+      return;
+    }
+  }
+  
   localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
 }
 
@@ -171,11 +202,62 @@ export function createPreset(name: string, settings: DeviceSettings): Preset {
     recordFormat: _rfmt,
     ...rest
   } = settings;
+  const now = new Date();
   return {
     ...rest,
     id: Date.now().toString(),
     name,
+    tags: [],
+    isFavorite: false,
+    createdAt: now,
+    updatedAt: now,
   };
+}
+
+// ─── Preset Management Utilities ────────────────────────────────────────────
+
+/** Update tags for a specific preset */
+export function updatePresetTags(presetId: string, tags: string[]): Preset[] {
+  const presets = loadPresets();
+  const updated = presets.map(preset => 
+    preset.id === presetId 
+      ? { ...preset, tags: [...new Set(tags.map(t => t.trim()).filter(t => t))], updatedAt: new Date() }
+      : preset
+  );
+  savePresetsToStorage(updated);
+  return updated;
+}
+
+/** Toggle favorite status for a preset */
+export function togglePresetFavorite(presetId: string): Preset[] {
+  const presets = loadPresets();
+  const updated = presets.map(preset => 
+    preset.id === presetId 
+      ? { ...preset, isFavorite: !preset.isFavorite, updatedAt: new Date() }
+      : preset
+  );
+  savePresetsToStorage(updated);
+  return updated;
+}
+
+/** Get presets filtered by tag */
+export function getPresetsByTag(tag: string): Preset[] {
+  const presets = loadPresets();
+  return presets.filter(preset => preset.tags.includes(tag));
+}
+
+/** Get only favorite presets */
+export function getFavoritePresets(): Preset[] {
+  const presets = loadPresets();
+  return presets.filter(preset => preset.isFavorite);
+}
+
+/** Get all unique tags across presets */
+export function getAllTags(): string[] {
+  const presets = loadPresets();
+  const tagSet = new Set<string>();
+  presets.forEach(preset => preset.tags.forEach(tag => tagSet.add(tag)));
+  return Array.from(tagSet).sort();
 }
 
 // ─── Hook for convenience ───────────────────────────────────────────────────

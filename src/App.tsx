@@ -23,6 +23,7 @@ import {
   deriveDeviceNames,
   loadPresets as loadPresetsFromStorage,
   savePresetsToStorage,
+  togglePresetFavorite,
 } from "./hooks/useDeviceSettings";
 import { buildArgs } from "./utils/command-builder";
 import { useScrcpyVersion } from "./hooks/useScrcpyVersion";
@@ -814,19 +815,35 @@ function App() {
   // ─── Presets ─────────────────────────────────────────────────────────
 
   const handleSavePreset = useCallback(
-    (name: string) => {
+    (name: string, tags: string[] = []) => {
       const {
         recordingEnabled: _re,
         recordFile: _rf,
         recordFormat: _rfmt,
         ...rest
       } = currentSettings;
-      const newPreset: Preset = { ...rest, id: Date.now().toString(), name };
+      const newPreset: Preset = { 
+        ...rest, 
+        id: Date.now().toString(), 
+        name,
+        tags,
+        isFavorite: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       const updated = [...presets, newPreset];
       setPresets(updated);
       savePresetsToStorage(updated);
     },
     [currentSettings, presets],
+  );
+
+  const handleToggleFavorite = useCallback(
+    (presetId: string) => {
+      const updated = togglePresetFavorite(presetId);
+      setPresets(updated);
+    },
+    [presets],
   );
 
   const handleLoadPreset = useCallback((preset: Preset) => {
@@ -843,6 +860,57 @@ function App() {
     },
     [presets],
   );
+
+  const handleExportPresets = useCallback(async () => {
+    try {
+      const presetsJson = JSON.stringify(presets, null, 2);
+      const success = await invoke("export_presets", { content: presetsJson });
+      if (success) {
+        addLog(`Successfully exported ${presets.length} presets`, "SUCCESS");
+      }
+    } catch (error) {
+      addLog(`Failed to export presets: ${error}`, "ERROR");
+    }
+  }, [presets]);
+
+  const handleImportPresets = useCallback(async () => {
+    try {
+      const importedJson: string | null = await invoke("import_presets");
+      if (!importedJson) return; // User cancelled
+
+      const importedPresets: Preset[] = JSON.parse(importedJson);
+      
+      // Validate imported presets
+      const validPresets = importedPresets.filter(preset => {
+        return preset.id && preset.name && typeof preset === 'object';
+      });
+
+      if (validPresets.length === 0) {
+        addLog("No valid presets found in imported file", "ERROR");
+        return;
+      }
+
+      // Merge with existing presets, avoiding ID conflicts
+      const existingIds = new Set(presets.map(p => p.id));
+      const mergedPresets = [...presets];
+      
+      for (const preset of validPresets) {
+        if (existingIds.has(preset.id)) {
+          // Generate new ID for conflicting preset
+          const newPreset = { ...preset, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) };
+          mergedPresets.push(newPreset);
+        } else {
+          mergedPresets.push(preset);
+        }
+      }
+
+      setPresets(mergedPresets);
+      savePresetsToStorage(mergedPresets);
+      addLog(`Successfully imported ${validPresets.length} presets`, "SUCCESS");
+    } catch (error) {
+      addLog(`Failed to import presets: ${error}`, "ERROR");
+    }
+  }, [presets]);
 
   // ─── Render content ──────────────────────────────────────────────────
 
@@ -932,6 +1000,9 @@ function App() {
             onSavePreset={handleSavePreset}
             onLoadPreset={handleLoadPreset}
             onDeletePreset={handleDeletePreset}
+            onToggleFavorite={handleToggleFavorite}
+            onExport={handleExportPresets}
+            onImport={handleImportPresets}
           />
         );
       case "logs":

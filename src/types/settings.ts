@@ -159,12 +159,17 @@ export const DEFAULT_DEVICE_SETTINGS: DeviceSettings = {
 /**
  * Preset omits session-specific fields (recording).
  * Has an `id` for identification.
+ * Includes tags for organization and favorite status.
  */
 export interface Preset extends Omit<
   DeviceSettings,
   "recordingEnabled" | "recordFile" | "recordFormat"
 > {
   id: string;
+  tags: string[];
+  isFavorite: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /** Apply defaults for new fields when loading old presets from localStorage */
@@ -177,7 +182,15 @@ export function migratePreset(
     recordFormat: _rfmt,
     ...defaults
   } = DEFAULT_DEVICE_SETTINGS;
-  return { ...defaults, ...raw } as Preset;
+  const now = new Date();
+  return {
+    ...defaults,
+    ...raw,
+    tags: raw.tags || [],
+    isFavorite: raw.isFavorite || false,
+    createdAt: raw.createdAt || now,
+    updatedAt: raw.updatedAt || now,
+  } as Preset;
 }
 
 /** Apply defaults for new fields when loading old device settings from localStorage */
