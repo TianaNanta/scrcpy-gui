@@ -75,7 +75,7 @@ export default function Sidebar({
         <DevicePhoneMobileIcon className="sidebar-logo" />
         <div className={`sidebar-title ${isCollapsed ? "hidden" : ""}`}>
           <h2>Scrcpy GUI</h2>
-          <span className="sidebar-version">v0.5.6</span>
+          <span className="sidebar-version">v0.6.0</span>
         </div>
         <button
           className="sidebar-toggle"
