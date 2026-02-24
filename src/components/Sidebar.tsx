@@ -1,9 +1,12 @@
+import { useState, useEffect } from "react";
 import {
   DevicePhoneMobileIcon,
   DocumentTextIcon,
   Bars3Icon,
   AdjustmentsHorizontalIcon,
   ArrowPathIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import type { Dependencies } from "../types/device";
@@ -36,6 +39,15 @@ export default function Sidebar({
   onRefreshDeps,
   connectedCount,
 }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    return saved === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("sidebar-collapsed", String(isCollapsed));
+  }, [isCollapsed]);
+
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
     let nextIndex = index;
     if (e.key === "ArrowDown") {
@@ -58,13 +70,25 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
         <DevicePhoneMobileIcon className="sidebar-logo" />
-        <div className="sidebar-title">
+        <div className={`sidebar-title ${isCollapsed ? "hidden" : ""}`}>
           <h2>Scrcpy GUI</h2>
           <span className="sidebar-version">v0.5.6</span>
         </div>
+        <button
+          className="sidebar-toggle"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronRightIcon className="sidebar-toggle-icon" />
+          ) : (
+            <ChevronLeftIcon className="sidebar-toggle-icon" />
+          )}
+        </button>
       </div>
       <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">
         {tabs.map((tab, index) => {
@@ -78,10 +102,11 @@ export default function Sidebar({
               role="tab"
               aria-selected={currentTab === tab.id}
               tabIndex={currentTab === tab.id ? 0 : -1}
+              title={isCollapsed ? tab.name : undefined}
             >
               <Icon className="sidebar-icon" />
-              {tab.name}
-              {tab.id === "devices" && connectedCount > 0 && (
+              <span className={isCollapsed ? "hidden" : ""}>{tab.name}</span>
+              {tab.id === "devices" && connectedCount > 0 && !isCollapsed && (
                 <span className="sidebar-badge">{connectedCount}</span>
               )}
             </button>
@@ -89,7 +114,7 @@ export default function Sidebar({
         })}
       </nav>
       <div className="sidebar-footer">
-        <div className="dependency-status">
+        <div className={`dependency-status ${isCollapsed ? "hidden" : ""}`}>
           <div className="dependency-item">
             <span
               className={`dep-badge ${dependencies?.adb ? "ready" : "not-ready"}`}
