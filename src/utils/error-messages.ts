@@ -5,6 +5,45 @@
  * for common device connection failures.
  */
 
+/**
+ * Context identifiers for different error scenarios
+ */
+export type ErrorContext =
+  | "device-connect"
+  | "device-disconnect"
+  | "device-register"
+  | "wireless-pair"
+  | "wireless-connect"
+  | "adb-command"
+  | "scrcpy-launch"
+  | "scrcpy-exit"
+  | "settings-load"
+  | "settings-save"
+  | "preset-load"
+  | "preset-save"
+  | "health-poll"
+  | "unknown";
+
+/**
+ * Error context constants for consistent error handling across the application
+ */
+export const ERROR_CONTEXTS: Record<ErrorContext, string> = {
+  "device-connect": "Device connection",
+  "device-disconnect": "Device disconnection",
+  "device-register": "Device registration",
+  "wireless-pair": "Wireless pairing",
+  "wireless-connect": "Wireless connection",
+  "adb-command": "ADB command",
+  "scrcpy-launch": "Scrcpy launch",
+  "scrcpy-exit": "Scrcpy process",
+  "settings-load": "Settings load",
+  "settings-save": "Settings save",
+  "preset-load": "Preset load",
+  "preset-save": "Preset save",
+  "health-poll": "Health polling",
+  unknown: "Unknown operation",
+};
+
 export interface ErrorSuggestion {
   title: string;
   steps: string[];
@@ -106,4 +145,87 @@ export function getFriendlyErrorMessage(errorCode: string): ErrorSuggestion {
 export function getErrorDescription(errorCode: string): string {
   const suggestion = getFriendlyErrorMessage(errorCode);
   return suggestion.title;
+}
+
+/**
+ * Extract a user-friendly error message from any error type
+ *
+ * @param error - The error to extract message from (Error, string, or unknown)
+ * @param context - Optional context describing the operation that failed
+ * @returns A user-friendly error message string
+ * @example
+ * try {
+ *   await connectDevice();
+ * } catch (error) {
+ *   const message = getErrorMessage(error, "device-connect");
+ *   addLog(message, "ERROR");
+ * }
+ */
+export function getErrorMessage(
+  error: unknown,
+  context?: ErrorContext,
+): string {
+  let message: string;
+
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === "string") {
+    message = error;
+  } else {
+    message = "An unknown error occurred";
+  }
+
+  if (context && context !== "unknown") {
+    const contextLabel = ERROR_CONTEXTS[context];
+    return `${contextLabel} failed: ${message}`;
+  }
+
+  return message;
+}
+
+/**
+ * Check if an error indicates a network-related failure
+ *
+ * @param error - The error to check
+ * @returns True if the error appears to be network-related
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error) && typeof error !== "string") {
+    return false;
+  }
+
+  const message = error instanceof Error ? error.message : error;
+  const lowerMessage = message.toLowerCase();
+
+  return (
+    lowerMessage.includes("network") ||
+    lowerMessage.includes("timeout") ||
+    lowerMessage.includes("connection refused") ||
+    lowerMessage.includes("econnrefused") ||
+    lowerMessage.includes("enotfound") ||
+    lowerMessage.includes("etimedout") ||
+    lowerMessage.includes("socket hang up")
+  );
+}
+
+/**
+ * Check if an error indicates a permission-related failure
+ *
+ * @param error - The error to check
+ * @returns True if the error appears to be permission-related
+ */
+export function isPermissionError(error: unknown): boolean {
+  if (!(error instanceof Error) && typeof error !== "string") {
+    return false;
+  }
+
+  const message = error instanceof Error ? error.message : error;
+  const lowerMessage = message.toLowerCase();
+
+  return (
+    lowerMessage.includes("permission") ||
+    lowerMessage.includes("unauthorized") ||
+    lowerMessage.includes("access denied") ||
+    lowerMessage.includes("eacces")
+  );
 }

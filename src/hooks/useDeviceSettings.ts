@@ -1,7 +1,15 @@
+/**
+ * Device Settings Management Utilities
+ *
+ * Provides functions for loading, saving, and managing device-specific settings
+ * and presets with localStorage persistence.
+ *
+ * @module useDeviceSettings
+ */
+
 import { useMemo } from "react";
+import type { DeviceSettings, Preset } from "../types/settings";
 import {
-  type DeviceSettings,
-  type Preset,
   DEFAULT_DEVICE_SETTINGS,
   migrateDeviceSettings,
   migratePreset,
@@ -10,6 +18,15 @@ import {
 const DEVICE_SETTINGS_KEY = "deviceSettings";
 const PRESETS_KEY = "scrcpy-presets";
 const DEVICE_NAMES_KEY = "deviceNames";
+
+/**
+ * Load all device settings from localStorage
+ *
+ * @returns Map of device serial numbers to their settings
+ * @example
+ * const settings = loadAllDeviceSettings();
+ * const deviceSettings = settings.get("device-123");
+ */
 
 // ─── Device Settings ────────────────────────────────────────────────────────
 
@@ -155,8 +172,14 @@ export function loadPresets(): Preset[] {
         const migrated = migratePreset(preset);
         return {
           ...migrated,
-          createdAt: typeof migrated.createdAt === 'string' ? new Date(migrated.createdAt) : migrated.createdAt,
-          updatedAt: typeof migrated.updatedAt === 'string' ? new Date(migrated.updatedAt) : migrated.updatedAt,
+          createdAt:
+            typeof migrated.createdAt === "string"
+              ? new Date(migrated.createdAt)
+              : migrated.createdAt,
+          updatedAt:
+            typeof migrated.updatedAt === "string"
+              ? new Date(migrated.updatedAt)
+              : migrated.updatedAt,
         };
       });
     } catch {
@@ -172,7 +195,9 @@ export function savePresetsToStorage(presets: Preset[]): void {
   const names = new Set<string>();
   for (const preset of presets) {
     if (!preset.name || preset.name.trim().length === 0) {
-      console.error(`Invalid preset: missing or empty name for id ${preset.id}`);
+      console.error(
+        `Invalid preset: missing or empty name for id ${preset.id}`,
+      );
       return; // Don't save invalid data
     }
     if (names.has(preset.name.trim())) {
@@ -180,17 +205,19 @@ export function savePresetsToStorage(presets: Preset[]): void {
       return;
     }
     names.add(preset.name.trim());
-    
+
     if (!Array.isArray(preset.tags)) {
       console.error(`Invalid preset: tags not array for id ${preset.id}`);
       return;
     }
-    if (typeof preset.isFavorite !== 'boolean') {
-      console.error(`Invalid preset: isFavorite not boolean for id ${preset.id}`);
+    if (typeof preset.isFavorite !== "boolean") {
+      console.error(
+        `Invalid preset: isFavorite not boolean for id ${preset.id}`,
+      );
       return;
     }
   }
-  
+
   localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
 }
 
@@ -219,10 +246,14 @@ export function createPreset(name: string, settings: DeviceSettings): Preset {
 /** Update tags for a specific preset */
 export function updatePresetTags(presetId: string, tags: string[]): Preset[] {
   const presets = loadPresets();
-  const updated = presets.map(preset => 
-    preset.id === presetId 
-      ? { ...preset, tags: [...new Set(tags.map(t => t.trim()).filter(t => t))], updatedAt: new Date() }
-      : preset
+  const updated = presets.map((preset) =>
+    preset.id === presetId
+      ? {
+          ...preset,
+          tags: [...new Set(tags.map((t) => t.trim()).filter((t) => t))],
+          updatedAt: new Date(),
+        }
+      : preset,
   );
   savePresetsToStorage(updated);
   return updated;
@@ -231,10 +262,10 @@ export function updatePresetTags(presetId: string, tags: string[]): Preset[] {
 /** Toggle favorite status for a preset */
 export function togglePresetFavorite(presetId: string): Preset[] {
   const presets = loadPresets();
-  const updated = presets.map(preset => 
-    preset.id === presetId 
+  const updated = presets.map((preset) =>
+    preset.id === presetId
       ? { ...preset, isFavorite: !preset.isFavorite, updatedAt: new Date() }
-      : preset
+      : preset,
   );
   savePresetsToStorage(updated);
   return updated;
@@ -243,20 +274,20 @@ export function togglePresetFavorite(presetId: string): Preset[] {
 /** Get presets filtered by tag */
 export function getPresetsByTag(tag: string): Preset[] {
   const presets = loadPresets();
-  return presets.filter(preset => preset.tags.includes(tag));
+  return presets.filter((preset) => preset.tags.includes(tag));
 }
 
 /** Get only favorite presets */
 export function getFavoritePresets(): Preset[] {
   const presets = loadPresets();
-  return presets.filter(preset => preset.isFavorite);
+  return presets.filter((preset) => preset.isFavorite);
 }
 
 /** Get all unique tags across presets */
 export function getAllTags(): string[] {
   const presets = loadPresets();
   const tagSet = new Set<string>();
-  presets.forEach(preset => preset.tags.forEach(tag => tagSet.add(tag)));
+  presets.forEach((preset) => preset.tags.forEach((tag) => tagSet.add(tag)));
   return Array.from(tagSet).sort();
 }
 
