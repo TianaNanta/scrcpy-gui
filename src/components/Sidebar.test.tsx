@@ -21,6 +21,12 @@ vi.mock("@heroicons/react/24/outline", () => ({
   ArrowPathIcon: (props: Record<string, unknown>) => (
     <span data-testid="arrow-icon" {...props} />
   ),
+  ChevronLeftIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron-left-icon" {...props} />
+  ),
+  ChevronRightIcon: (props: Record<string, unknown>) => (
+    <span data-testid="chevron-right-icon" {...props} />
+  ),
 }));
 
 vi.mock("@heroicons/react/24/solid", () => ({

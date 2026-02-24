@@ -1,13 +1,36 @@
 import { useState, useRef } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
+/**
+ * Props for the TagInput component
+ */
 interface TagInputProps {
+  /** Array of current tag strings */
   tags: string[];
+  /** Callback fired when tags change */
   onChange: (tags: string[]) => void;
+  /** Placeholder text for the input field */
   placeholder?: string;
+  /** Maximum number of tags allowed */
   maxTags?: number;
 }
 
+/**
+ * TagInput Component
+ *
+ * An input component for managing multiple tags.
+ * Users can add tags by pressing Enter or comma, and remove them by clicking the X button.
+ *
+ * @param props - Component props
+ * @returns JSX element
+ * @example
+ * <TagInput
+ *   tags={tags}
+ *   onChange={setTags}
+ *   placeholder="Add tags..."
+ *   maxTags={5}
+ * />
+ */
 export default function TagInput({
   tags,
   onChange,
@@ -25,7 +48,7 @@ export default function TagInput({
   };
 
   const removeTag = (tagToRemove: string) => {
-    onChange(tags.filter(tag => tag !== tagToRemove));
+    onChange(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

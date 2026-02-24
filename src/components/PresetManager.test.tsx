@@ -9,6 +9,57 @@ vi.mock("@heroicons/react/24/outline", () => ({
   DocumentTextIcon: (props: Record<string, unknown>) => (
     <span data-testid="doc-icon" {...props} />
   ),
+  ArrowDownTrayIcon: (props: Record<string, unknown>) => (
+    <span data-testid="download-icon" {...props} />
+  ),
+  ArrowUpTrayIcon: (props: Record<string, unknown>) => (
+    <span data-testid="upload-icon" {...props} />
+  ),
+}));
+
+// Mock TagInput component
+vi.mock("./TagInput", () => ({
+  default: ({
+    tags,
+    onChange,
+    placeholder,
+  }: {
+    tags: string[];
+    onChange: (tags: string[]) => void;
+    placeholder?: string;
+  }) => (
+    <div data-testid="tag-input">
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={tags.join(", ")}
+        onChange={(e) => onChange(e.target.value.split(", ").filter(Boolean))}
+        data-testid="tag-input-field"
+      />
+    </div>
+  ),
+}));
+
+// Mock PresetCard component
+vi.mock("./PresetCard", () => ({
+  default: ({
+    preset,
+    onLoad,
+    onDelete,
+    onToggleFavorite,
+  }: {
+    preset: Preset;
+    onLoad: () => void;
+    onDelete?: () => void;
+    onToggleFavorite?: () => void;
+  }) => (
+    <div data-testid={`preset-card-${preset.id}`}>
+      <span>{preset.name}</span>
+      <button onClick={onLoad}>Load</button>
+      {onDelete && <button onClick={onDelete}>Delete</button>}
+      {onToggleFavorite && <button onClick={onToggleFavorite}>Favorite</button>}
+    </div>
+  ),
 }));
 
 const makePreset = (overrides: Partial<Preset> = {}): Preset => {
@@ -124,7 +175,9 @@ describe("PresetManager", () => {
     fireEvent.keyDown(tagInput, { key: "Enter" });
     fireEvent.click(saveButton);
 
-    expect(defaultProps.onSavePreset).toHaveBeenCalledWith("Tagged Preset", ["gaming"]);
+    expect(defaultProps.onSavePreset).toHaveBeenCalledWith("Tagged Preset", [
+      "gaming",
+    ]);
   });
 
   it("renders multiple presets", () => {

@@ -1,9 +1,25 @@
+/**
+ * Props for the TagBadge component
+ */
 interface TagBadgeProps {
+  /** The tag text to display */
   tag: string;
+  /** Callback fired when the remove button is clicked */
   onRemove?: () => void;
+  /** Whether to show the remove button */
   removable?: boolean;
 }
 
+/**
+ * TagBadge Component
+ *
+ * Displays a single tag as a styled badge with an optional remove button.
+ *
+ * @param props - Component props
+ * @returns JSX element
+ * @example
+ * <TagBadge tag="work" removable onRemove={() => removeTag("work")} />
+ */
 export default function TagBadge({
   tag,
   onRemove,

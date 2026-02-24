@@ -1,12 +1,33 @@
 import { StarIcon as SolidStarIcon } from "@heroicons/react/24/solid";
 import { StarIcon as OutlineStarIcon } from "@heroicons/react/24/outline";
 
+/**
+ * Props for the FavoriteStar component
+ */
 interface FavoriteStarProps {
+  /** Whether the item is currently favorited */
   isFavorite: boolean;
+  /** Callback fired when the star is clicked */
   onToggle: () => void;
+  /** Size of the star icon */
   size?: "sm" | "md" | "lg";
 }
 
+/**
+ * FavoriteStar Component
+ *
+ * A clickable star icon for toggling favorite status.
+ * Displays a filled star when favorited, outline when not.
+ *
+ * @param props - Component props
+ * @returns JSX element
+ * @example
+ * <FavoriteStar
+ *   isFavorite={preset.isFavorite}
+ *   onToggle={() => toggleFavorite(preset.id)}
+ *   size="md"
+ * />
+ */
 export default function FavoriteStar({
   isFavorite,
   onToggle,
@@ -27,7 +48,9 @@ export default function FavoriteStar({
         background: "none",
         border: "none",
         cursor: "pointer",
-        color: isFavorite ? "var(--color-accent, #fbbf24)" : "var(--color-text-secondary, #6b7280)",
+        color: isFavorite
+          ? "var(--color-accent, #fbbf24)"
+          : "var(--color-text-secondary, #6b7280)",
         transition: "color 0.2s ease",
         display: "flex",
         alignItems: "center",

@@ -36,8 +36,8 @@ describe("DeviceStatusIndicator", () => {
       buildNumber: "TP1A.220624.014",
     },
     staleness: "fresh" as StalenessLevel,
-    lastSeen: Date.now() - 1000,
-    lastUpdated: Date.now() - 1000,
+    lastSeen: Date.now() - 100, // 100ms ago for "just now"
+    lastUpdated: Date.now() - 100, // 100ms ago for "just now"
     errorReason: undefined,
   };
 
@@ -61,15 +61,6 @@ describe("DeviceStatusIndicator", () => {
       temperature: 38,
       isCharging: false,
       health: "warm",
-    },
-  };
-
-  const mockLowStorageHealth: DeviceHealth = {
-    ...mockOnlineHealth,
-    storage: {
-      used: 95_000_000_000, // 95GB
-      total: 100_000_000_000, // 100GB
-      free: 5_000_000_000, // 5GB
     },
   };
 
@@ -172,19 +163,35 @@ describe("DeviceStatusIndicator", () => {
           showDetails={true}
         />,
       );
-      const batterySection = screen.getByText("8%").closest(".battery");
-      expect(batterySection).toHaveClass("warning-low");
-    });
-
-    it("shows low storage warning", () => {
-      render(
+      // Battery at 8% should show warning class (8% is in 5-10% range)
+      const { container } = render(
         <DeviceStatusIndicator
-          health={mockLowStorageHealth}
+          health={mockLowBatteryHealth}
           showDetails={true}
         />,
       );
-      const storageSection = screen.getByText("95%").closest(".storage");
-      expect(storageSection).toHaveClass("warning-low");
+      const batteryItem = container.querySelector(".battery");
+      expect(batteryItem).toHaveClass("warning-warning");
+    });
+
+    it("shows low storage warning", () => {
+      // For storage warning, need free space between 200MB and 500MB
+      const veryLowStorageHealth: DeviceHealth = {
+        ...mockOnlineHealth,
+        storage: {
+          used: 99_700_000_000, // 99.7GB
+          total: 100_000_000_000, // 100GB
+          free: 300_000_000, // 300MB - triggers warning (between 200MB and 500MB)
+        },
+      };
+      const { container } = render(
+        <DeviceStatusIndicator
+          health={veryLowStorageHealth}
+          showDetails={true}
+        />,
+      );
+      const storageItem = container.querySelector(".storage");
+      expect(storageItem).toHaveClass("warning-warning");
     });
   });
 
